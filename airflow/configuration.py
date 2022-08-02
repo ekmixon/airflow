@@ -93,9 +93,7 @@ def _get_config_value_from_secret_backend(config_key):
     """Get Config option values from Secret Backend"""
     try:
         secrets_client = get_custom_secret_backend()
-        if not secrets_client:
-            return None
-        return secrets_client.get_config(config_key)
+        return secrets_client.get_config(config_key) if secrets_client else None
     except Exception as e:
         raise AirflowConfigException(
             'Cannot retrieve config from alternative secrets backend. '
@@ -272,9 +270,9 @@ class AirflowConfigParser(ConfigParser):
             'SequentialExecutor',
         )
         is_sqlite = "sqlite" in self.get('core', 'sql_alchemy_conn')
-        if is_sqlite and is_executor_without_sqlite_support:
-            raise AirflowConfigException(f"error: cannot use sqlite with the {self.get('core', 'executor')}")
         if is_sqlite:
+            if is_executor_without_sqlite_support:
+                raise AirflowConfigException(f"error: cannot use sqlite with the {self.get('core', 'executor')}")
             import sqlite3
 
             from airflow.utils.docs import get_docs_url
@@ -320,36 +318,40 @@ class AirflowConfigParser(ConfigParser):
         if env_var in os.environ:
             return expand_env_var(os.environ[env_var])
         # alternatively AIRFLOW__{SECTION}__{KEY}_CMD (for a command)
-        env_var_cmd = env_var + '_CMD'
-        if env_var_cmd in os.environ:
-            # if this is a valid command key...
-            if (section, key) in self.sensitive_config_values:
-                return run_command(os.environ[env_var_cmd])
+        env_var_cmd = f'{env_var}_CMD'
+        if (
+            env_var_cmd in os.environ
+            and (section, key) in self.sensitive_config_values
+        ):
+            return run_command(os.environ[env_var_cmd])
         # alternatively AIRFLOW__{SECTION}__{KEY}_SECRET (to get from Secrets Backend)
-        env_var_secret_path = env_var + '_SECRET'
-        if env_var_secret_path in os.environ:
-            # if this is a valid secret path...
-            if (section, key) in self.sensitive_config_values:
-                return _get_config_value_from_secret_backend(os.environ[env_var_secret_path])
+        env_var_secret_path = f'{env_var}_SECRET'
+        if (
+            env_var_secret_path in os.environ
+            and (section, key) in self.sensitive_config_values
+        ):
+            return _get_config_value_from_secret_backend(os.environ[env_var_secret_path])
         return None
 
     def _get_cmd_option(self, section, key):
-        fallback_key = key + '_cmd'
+        fallback_key = f'{key}_cmd'
         # if this is a valid command key...
-        if (section, key) in self.sensitive_config_values:
-            if super().has_option(section, fallback_key):
-                command = super().get(section, fallback_key)
-                return run_command(command)
+        if (section, key) in self.sensitive_config_values and super().has_option(
+            section, fallback_key
+        ):
+            command = super().get(section, fallback_key)
+            return run_command(command)
         return None
 
     def _get_secret_option(self, section, key):
         """Get Config option values from Secret Backend"""
-        fallback_key = key + '_secret'
+        fallback_key = f'{key}_secret'
         # if this is a valid secret key...
-        if (section, key) in self.sensitive_config_values:
-            if super().has_option(section, fallback_key):
-                secrets_path = super().get(section, fallback_key)
-                return _get_config_value_from_secret_backend(secrets_path)
+        if (section, key) in self.sensitive_config_values and super().has_option(
+            section, fallback_key
+        ):
+            secrets_path = super().get(section, fallback_key)
+            return _get_config_value_from_secret_backend(secrets_path)
         return None
 
     def get(self, section, key, **kwargs):
@@ -379,35 +381,29 @@ class AirflowConfigParser(ConfigParser):
         return self._get_option_from_default_config(section, key, **kwargs)
 
     def _get_option_from_default_config(self, section, key, **kwargs):
-        # ...then the default config
         if self.airflow_defaults.has_option(section, key) or 'fallback' in kwargs:
             return expand_env_var(self.airflow_defaults.get(section, key, **kwargs))
 
-        else:
-            log.warning("section/key [%s/%s] not found in config", section, key)
+        log.warning("section/key [%s/%s] not found in config", section, key)
 
-            raise AirflowConfigException(f"section/key [{section}/{key}] not found in config")
+        raise AirflowConfigException(f"section/key [{section}/{key}] not found in config")
 
     def _get_option_from_secrets(self, deprecated_key, deprecated_section, key, section):
-        # ...then from secret backends
-        option = self._get_secret_option(section, key)
-        if option:
+        if option := self._get_secret_option(section, key):
             return option
         if deprecated_section:
-            option = self._get_secret_option(deprecated_section, deprecated_key)
-            if option:
+            if option := self._get_secret_option(
+                deprecated_section, deprecated_key
+            ):
                 self._warn_deprecate(section, key, deprecated_section, deprecated_key)
                 return option
         return None
 
     def _get_option_from_commands(self, deprecated_key, deprecated_section, key, section):
-        # ...then commands
-        option = self._get_cmd_option(section, key)
-        if option:
+        if option := self._get_cmd_option(section, key):
             return option
         if deprecated_section:
-            option = self._get_cmd_option(deprecated_section, deprecated_key)
-            if option:
+            if option := self._get_cmd_option(deprecated_section, deprecated_key):
                 self._warn_deprecate(section, key, deprecated_section, deprecated_key)
                 return option
         return None
@@ -418,10 +414,11 @@ class AirflowConfigParser(ConfigParser):
             # Use the parent's methods to get the actual config here to be able to
             # separate the config from default config.
             return expand_env_var(super().get(section, key, **kwargs))
-        if deprecated_section:
-            if super().has_option(deprecated_section, deprecated_key):
-                self._warn_deprecate(section, key, deprecated_section, deprecated_key)
-                return expand_env_var(super().get(deprecated_section, deprecated_key, **kwargs))
+        if deprecated_section and super().has_option(
+            deprecated_section, deprecated_key
+        ):
+            self._warn_deprecate(section, key, deprecated_section, deprecated_key)
+            return expand_env_var(super().get(deprecated_section, deprecated_key, **kwargs))
         return None
 
     def _get_environment_variables(self, deprecated_key, deprecated_section, key, section):
@@ -636,8 +633,7 @@ class AirflowConfigParser(ConfigParser):
 
     def _include_secrets(self, config_sources, display_sensitive, display_source, raw):
         for (section, key) in self.sensitive_config_values:
-            opt = self._get_secret_option(section, key)
-            if opt:
+            if opt := self._get_secret_option(section, key):
                 if not display_sensitive:
                     opt = '< hidden >'
                 if display_source:
@@ -645,7 +641,7 @@ class AirflowConfigParser(ConfigParser):
                 elif raw:
                     opt = opt.replace('%', '%%')
                 config_sources.setdefault(section, OrderedDict()).update({key: opt})
-                del config_sources[section][key + '_secret']
+                del config_sources[section][f'{key}_secret']
 
     def _include_commands(self, config_sources, display_sensitive, display_source, raw):
         for (section, key) in self.sensitive_config_values:
@@ -659,7 +655,7 @@ class AirflowConfigParser(ConfigParser):
             elif raw:
                 opt = opt.replace('%', '%%')
             config_sources.setdefault(section, OrderedDict()).update({key: opt})
-            del config_sources[section][key + '_cmd']
+            del config_sources[section][f'{key}_cmd']
 
     def _include_envs(self, config_sources, display_sensitive, display_source, raw):
         for env_var in [
@@ -878,7 +874,7 @@ def initialize_config():
 
     # Make it no longer a proxy variable, just set it to an actual string
     global WEBSERVER_CONFIG
-    WEBSERVER_CONFIG = AIRFLOW_HOME + '/webserver_config.py'
+    WEBSERVER_CONFIG = f'{AIRFLOW_HOME}/webserver_config.py'
 
     if not os.path.isfile(WEBSERVER_CONFIG):
         import shutil
@@ -1022,9 +1018,7 @@ def ensure_secrets_loaded() -> List[BaseSecretsBackend]:
 
 def get_custom_secret_backend() -> Optional[BaseSecretsBackend]:
     """Get Secret Backend if defined in airflow.cfg"""
-    secrets_backend_cls = conf.getimport(section='secrets', key='backend')
-
-    if secrets_backend_cls:
+    if secrets_backend_cls := conf.getimport(section='secrets', key='backend'):
         try:
             alternative_secrets_config_dict = json.loads(
                 conf.get(section='secrets', key='backend_kwargs', fallback='{}')

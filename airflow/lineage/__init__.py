@@ -49,9 +49,7 @@ class Metadata:
 
 def get_backend() -> Optional[LineageBackend]:
     """Gets the lineage backend if defined in the configs"""
-    clazz = conf.getimport("lineage", "backend", fallback=None)
-
-    if clazz:
+    if clazz := conf.getimport("lineage", "backend", fallback=None):
         if not issubclass(clazz, LineageBackend):
             raise TypeError(
                 f"Your custom Lineage class `{clazz.__name__}` "
@@ -86,7 +84,7 @@ def _to_dataset(obj: Any, source: str) -> Optional[Metadata]:
     if not attr.has(obj):
         return None
 
-    type_name = obj.__module__ + '.' + obj.__class__.__name__
+    type_name = f'{obj.__module__}.{obj.__class__.__name__}'
     data = unstructure(obj)
 
     return Metadata(type_name, source, data)

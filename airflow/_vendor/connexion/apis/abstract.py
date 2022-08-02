@@ -24,9 +24,9 @@ logger = logging.getLogger('connexion.apis.abstract')
 
 class AbstractAPIMeta(abc.ABCMeta):
 
-    def __init__(cls, name, bases, attrs):
-        abc.ABCMeta.__init__(cls, name, bases, attrs)
-        cls._set_jsonifier()
+    def __init__(self, name, bases, attrs):
+        abc.ABCMeta.__init__(self, name, bases, attrs)
+        self._set_jsonifier()
 
 
 class AbstractAPI(metaclass=AbstractAPIMeta):
@@ -198,7 +198,7 @@ class AbstractAPI(metaclass=AbstractAPIMeta):
 
         :type paths: list
         """
-        paths = paths or self.specification.get('paths', dict())
+        paths = paths or self.specification.get('paths', {})
         for path, methods in paths.items():
             logger.debug('Adding %s%s...', self.base_path, path)
 
@@ -232,14 +232,14 @@ class AbstractAPI(metaclass=AbstractAPIMeta):
 
     @classmethod
     @abc.abstractmethod
-    def get_request(self, *args, **kwargs):
+    def get_request(cls, *args, **kwargs):
         """
         This method converts the user framework request to a ConnexionRequest.
         """
 
     @classmethod
     @abc.abstractmethod
-    def get_response(self, response, mimetype=None, request=None):
+    def get_response(cls, response, mimetype=None, request=None):
         """
         This method converts a handler response to a framework response.
         This method should just retrieve response from handler then call `cls._get_response`.
@@ -306,29 +306,28 @@ class AbstractAPI(metaclass=AbstractAPIMeta):
         if cls._is_framework_response(response):
             return response
 
-        if isinstance(response, tuple):
-            len_response = len(response)
-            if len_response == 1:
-                data, = response
-                return cls._build_response(mimetype=mimetype, data=data, extra_context=extra_context)
-            if len_response == 2:
-                if isinstance(response[1], (int, Enum)):
-                    data, status_code = response
-                    return cls._build_response(mimetype=mimetype, data=data, status_code=status_code, extra_context=extra_context)
-                else:
-                    data, headers = response
-                return cls._build_response(mimetype=mimetype, data=data, headers=headers, extra_context=extra_context)
-            elif len_response == 3:
-                data, status_code, headers = response
-                return cls._build_response(mimetype=mimetype, data=data, status_code=status_code, headers=headers, extra_context=extra_context)
-            else:
-                raise TypeError(
-                    'The view function did not return a valid response tuple.'
-                    ' The tuple must have the form (body), (body, status, headers),'
-                    ' (body, status), or (body, headers).'
-                )
-        else:
+        if not isinstance(response, tuple):
             return cls._build_response(mimetype=mimetype, data=response, extra_context=extra_context)
+        len_response = len(response)
+        if len_response == 1:
+            data, = response
+            return cls._build_response(mimetype=mimetype, data=data, extra_context=extra_context)
+        if len_response == 2:
+            if isinstance(response[1], (int, Enum)):
+                data, status_code = response
+                return cls._build_response(mimetype=mimetype, data=data, status_code=status_code, extra_context=extra_context)
+            else:
+                data, headers = response
+            return cls._build_response(mimetype=mimetype, data=data, headers=headers, extra_context=extra_context)
+        elif len_response == 3:
+            data, status_code, headers = response
+            return cls._build_response(mimetype=mimetype, data=data, status_code=status_code, headers=headers, extra_context=extra_context)
+        else:
+            raise TypeError(
+                'The view function did not return a valid response tuple.'
+                ' The tuple must have the form (body), (body, status, headers),'
+                ' (body, status), or (body, headers).'
+            )
 
     @classmethod
     def get_connexion_response(cls, response, mimetype=None):
@@ -418,24 +417,23 @@ class AbstractAPI(metaclass=AbstractAPIMeta):
     @classmethod
     def _serialize_data(cls, data, mimetype):
         # TODO: Harmonize with flask_api. Currently this is the backwards compatible with aiohttp_api._cast_body.
-        if not isinstance(data, bytes):
-            if isinstance(mimetype, str) and is_json_mimetype(mimetype):
-                body = cls.jsonifier.dumps(data)
-            elif isinstance(data, str):
-                body = data
-            else:
-                warnings.warn(
-                    "Implicit (aiohttp) serialization with str() will change in the next major version. "
-                    "This is triggered because a non-JSON response body is being stringified. "
-                    "This will be replaced by something that is mimetype-specific and may "
-                    "serialize some things as JSON or throw an error instead of silently "
-                    "stringifying unknown response bodies. "
-                    "Please make sure to specify media/mime types in your specs.",
-                    FutureWarning  # a Deprecation targeted at application users.
-                )
-                body = str(data)
-        else:
+        if isinstance(data, bytes):
             body = data
+        elif isinstance(mimetype, str) and is_json_mimetype(mimetype):
+            body = cls.jsonifier.dumps(data)
+        elif isinstance(data, str):
+            body = data
+        else:
+            warnings.warn(
+                "Implicit (aiohttp) serialization with str() will change in the next major version. "
+                "This is triggered because a non-JSON response body is being stringified. "
+                "This will be replaced by something that is mimetype-specific and may "
+                "serialize some things as JSON or throw an error instead of silently "
+                "stringifying unknown response bodies. "
+                "Please make sure to specify media/mime types in your specs.",
+                FutureWarning  # a Deprecation targeted at application users.
+            )
+            body = str(data)
         return body, mimetype
 
     def json_loads(self, data):

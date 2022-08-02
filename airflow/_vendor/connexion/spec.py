@@ -149,9 +149,11 @@ class Specification(collections_abc.Mapping):
 
     @classmethod
     def load(cls, spec, arguments=None):
-        if not isinstance(spec, dict):
-            return cls.from_file(spec, arguments=arguments)
-        return cls.from_dict(spec)
+        return (
+            cls.from_dict(spec)
+            if isinstance(spec, dict)
+            else cls.from_file(spec, arguments=arguments)
+        )
 
     def with_base_path(self, base_path):
         new_spec = self.clone()

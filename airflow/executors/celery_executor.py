@@ -91,14 +91,13 @@ def execute_command(command_to_exec: CommandType) -> None:
 
 
 def _execute_in_fork(command_to_exec: CommandType, celery_task_id: Optional[str] = None) -> None:
-    pid = os.fork()
-    if pid:
+    if pid := os.fork():
         # In parent, wait for the child
         pid, ret = os.waitpid(pid, 0)
         if ret == 0:
             return
 
-        raise AirflowException('Celery command failed on host: ' + get_hostname())
+        raise AirflowException(f'Celery command failed on host: {get_hostname()}')
 
     from airflow.sentry import Sentry
 
@@ -138,7 +137,7 @@ def _execute_in_subprocess(command_to_exec: CommandType, celery_task_id: Optiona
     except subprocess.CalledProcessError as e:
         log.exception('execute_command encountered a CalledProcessError')
         log.error(e.output)
-        msg = 'Celery command failed on host: ' + get_hostname()
+        msg = f'Celery command failed on host: {get_hostname()}'
         raise AirflowException(msg)
 
 
@@ -280,21 +279,24 @@ class CeleryExecutor(BaseExecutor):
         self.log.debug('Sent all tasks.')
 
         for key, _, result in key_and_async_results:
-            if isinstance(result, ExceptionWithTraceback) and isinstance(
-                result.exception, AirflowTaskTimeout
+            if (
+                isinstance(result, ExceptionWithTraceback)
+                and isinstance(result.exception, AirflowTaskTimeout)
+                and key in self.task_publish_retries
+                and (
+                    self.task_publish_retries.get(key)
+                    <= self.task_publish_max_retries
+                )
             ):
-                if key in self.task_publish_retries and (
-                    self.task_publish_retries.get(key) <= self.task_publish_max_retries
-                ):
-                    Stats.incr("celery.task_timeout_error")
-                    self.log.info(
-                        "[Try %s of %s] Task Timeout Error for Task: (%s).",
-                        self.task_publish_retries[key],
-                        self.task_publish_max_retries,
-                        key,
-                    )
-                    self.task_publish_retries[key] += 1
-                    continue
+                Stats.incr("celery.task_timeout_error")
+                self.log.info(
+                    "[Try %s of %s] Task Timeout Error for Task: (%s).",
+                    self.task_publish_retries[key],
+                    self.task_publish_max_retries,
+                    key,
+                )
+                self.task_publish_retries[key] += 1
+                continue
             self.queued_tasks.pop(key)
             self.task_publish_retries.pop(key)
             if isinstance(result, ExceptionWithTraceback):
@@ -415,9 +417,7 @@ class CeleryExecutor(BaseExecutor):
             elif state == celery_states.STARTED:
                 # It's now actually running, so know it made it to celery okay!
                 self.adopted_task_timeouts.pop(key, None)
-            elif state == celery_states.PENDING:
-                pass
-            else:
+            elif state != celery_states.PENDING:
                 self.log.info("Unexpected state for %s: %s", key, state)
         except Exception:
             self.log.exception("Error syncing the Celery executor, ignoring it.")
@@ -575,10 +575,9 @@ class BulkStateFetcher(LoggingMixin):
     ) -> Mapping[str, EventBufferValueType]:
         state_info: MutableMapping[str, EventBufferValueType] = {}
         for task_id in task_ids:
-            task_result = task_results_by_task_id.get(task_id)
-            if task_result:
+            if task_result := task_results_by_task_id.get(task_id):
                 state = task_result["status"]
-                info = None if not hasattr(task_result, "info") else task_result["info"]
+                info = task_result["info"] if hasattr(task_result, "info") else None
             else:
                 state = celery_states.PENDING
                 info = None

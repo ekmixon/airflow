@@ -154,16 +154,14 @@ class FlaskApi(AbstractAPI):
     @classmethod
     def _connexion_to_framework_response(cls, response, mimetype, extra_context=None):
         """ Cast ConnexionResponse to framework response class """
-        flask_response = cls._build_response(
+        return cls._build_response(
             mimetype=response.mimetype or mimetype,
             content_type=response.content_type,
             headers=response.headers,
             status_code=response.status_code,
             data=response.body,
             extra_context=extra_context,
-            )
-
-        return flask_response
+        )
 
     @classmethod
     def _build_response(cls, mimetype, content_type=None, headers=None, status_code=None, data=None, extra_context=None):
@@ -188,7 +186,7 @@ class FlaskApi(AbstractAPI):
         #       (cases where it might not make sense to jsonify the data)
         if (isinstance(mimetype, str) and is_json_mimetype(mimetype)):
             body = cls.jsonifier.dumps(data)
-        elif not (isinstance(data, bytes) or isinstance(data, str)):
+        elif not isinstance(data, (bytes, str)):
             warnings.warn(
                 "Implicit (flask) JSON serialization will change in the next major version. "
                 "This is triggered because a response body is being serialized as JSON "

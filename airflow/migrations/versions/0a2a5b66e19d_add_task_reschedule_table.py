@@ -22,6 +22,7 @@ Revises: 9635ae0956e7
 Create Date: 2018-06-17 22:50:00.053620
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -34,7 +35,7 @@ branch_labels = None
 depends_on = None
 
 TABLE_NAME = 'task_reschedule'
-INDEX_NAME = 'idx_' + TABLE_NAME + '_dag_task_date'
+INDEX_NAME = f'idx_{TABLE_NAME}_dag_task_date'
 
 
 def upgrade():

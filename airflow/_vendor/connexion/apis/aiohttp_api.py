@@ -53,7 +53,7 @@ async def problems_middleware(request, handler):
     except (werkzeug_HTTPException, _HttpNotFoundError) as exc:
         response = problem(status=exc.code, title=exc.name, detail=exc.description)
     except web.HTTPError as exc:
-        if exc.text == "{}: {}".format(exc.status, exc.reason):
+        if exc.text == f"{exc.status}: {exc.reason}":
             detail = HTTPStatus(exc.status).description
         else:
             detail = exc.text
@@ -187,10 +187,7 @@ class AioHttpApi(AbstractAPI):
                      self.base_path,
                      console_ui_path)
 
-        for path in (
-            console_ui_path + '/',
-            console_ui_path + '/index.html',
-        ):
+        for path in (f'{console_ui_path}/', f'{console_ui_path}/index.html'):
             self.subapp.router.add_route(
                 'GET',
                 path,
@@ -200,9 +197,10 @@ class AioHttpApi(AbstractAPI):
         if self.options.openapi_console_ui_config is not None:
             self.subapp.router.add_route(
                 'GET',
-                console_ui_path + '/swagger-ui-config.json',
-                self._get_swagger_ui_config
+                f'{console_ui_path}/swagger-ui-config.json',
+                self._get_swagger_ui_config,
             )
+
 
         # we have to add an explicit redirect instead of relying on the
         # normalize_path_middleware because we also serve static files
@@ -254,7 +252,7 @@ class AioHttpApi(AbstractAPI):
             security=security,
             security_definitions=security_definitions
         )
-        endpoint_name = "{}_not_found".format(self._api_name)
+        endpoint_name = f"{self._api_name}_not_found"
         self.subapp.router.add_route(
             '*',
             '/{not_found_path}',
@@ -270,18 +268,15 @@ class AioHttpApi(AbstractAPI):
                      extra=vars(operation))
 
         handler = operation.function
-        endpoint_name = '{}_{}_{}'.format(
-            self._api_name,
-            AioHttpApi.normalize_string(path),
-            method.lower()
-        )
+        endpoint_name = f'{self._api_name}_{AioHttpApi.normalize_string(path)}_{method.lower()}'
+
         self.subapp.router.add_route(
             method, path, handler, name=endpoint_name
         )
 
         if not path.endswith('/'):
             self.subapp.router.add_route(
-                method, path + '/', handler, name=endpoint_name + '_'
+                method, f'{path}/', handler, name=f'{endpoint_name}_'
             )
 
     @classmethod
@@ -298,10 +293,7 @@ class AioHttpApi(AbstractAPI):
 
         query = parse_qs(req.rel_url.query_string)
         headers = req.headers
-        body = None
-        if req.body_exists:
-            body = await req.read()
-
+        body = await req.read() if req.body_exists else None
         return ConnexionRequest(url=url,
                                 method=req.method.lower(),
                                 path_params=dict(req.match_info),
@@ -335,9 +327,7 @@ class AioHttpApi(AbstractAPI):
     @classmethod
     def _framework_to_connexion_response(cls, response, mimetype):
         """ Cast framework response class to ConnexionResponse used for schema validation """
-        body = None
-        if hasattr(response, "body"):  # StreamResponse and FileResponse don't have body
-            body = response.body
+        body = response.body if hasattr(response, "body") else None
         return ConnexionResponse(
             status_code=response.status,
             mimetype=mimetype,

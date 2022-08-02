@@ -70,10 +70,7 @@ with DAG(
         extract_data_string = ti.xcom_pull(task_ids='extract', key='order_data')
         order_data = json.loads(extract_data_string)
 
-        total_order_value = 0
-        for value in order_data.values():
-            total_order_value += value
-
+        total_order_value = sum(order_data.values())
         total_value = {"total_order_value": total_order_value}
         total_value_json_string = json.dumps(total_value)
         ti.xcom_push('total_order_value', total_value_json_string)

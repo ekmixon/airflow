@@ -41,8 +41,8 @@ def ds_add(ds: str, days: int) -> str:
     '2015-01-01'
     """
     if not days:
-        return str(ds)
-    dt = datetime.strptime(str(ds), "%Y-%m-%d") + timedelta(days=days)
+        return ds
+    dt = datetime.strptime(ds, "%Y-%m-%d") + timedelta(days=days)
     return dt.strftime("%Y-%m-%d")
 
 
@@ -63,7 +63,7 @@ def ds_format(ds: str, input_format: str, output_format: str) -> str:
     >>> ds_format('1/5/2015', "%m/%d/%Y",  "%Y-%m-%d")
     '2015-01-05'
     """
-    return datetime.strptime(str(ds), input_format).strftime(output_format)
+    return datetime.strptime(ds, input_format).strftime(output_format)
 
 
 def datetime_diff_for_humans(dt: Any, since: Optional[datetime] = None) -> str:

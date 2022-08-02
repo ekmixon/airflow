@@ -26,14 +26,16 @@ def get_tokeninfo_func(security_definition):
     >>> get_tokeninfo_url({'x-tokenInfoFunc': 'foo.bar'})
     '<function foo.bar>'
     """
-    token_info_func = (security_definition.get("x-tokenInfoFunc") or
-                       os.environ.get('TOKENINFO_FUNC'))
-    if token_info_func:
+    if token_info_func := (
+        security_definition.get("x-tokenInfoFunc")
+        or os.environ.get('TOKENINFO_FUNC')
+    ):
         return get_function_from_name(token_info_func)
 
-    token_info_url = (security_definition.get('x-tokenInfoUrl') or
-                      os.environ.get('TOKENINFO_URL'))
-    if token_info_url:
+    if token_info_url := (
+        security_definition.get('x-tokenInfoUrl')
+        or os.environ.get('TOKENINFO_URL')
+    ):
         return functools.partial(get_tokeninfo_remote, token_info_url)
 
     return None
@@ -47,9 +49,10 @@ def get_scope_validate_func(security_definition):
     >>> get_scope_validate_func({'x-scopeValidateFunc': 'foo.bar'})
     '<function foo.bar>'
     """
-    func = (security_definition.get("x-scopeValidateFunc") or
-            os.environ.get('SCOPEVALIDATE_FUNC'))
-    if func:
+    if func := (
+        security_definition.get("x-scopeValidateFunc")
+        or os.environ.get('SCOPEVALIDATE_FUNC')
+    ):
         return get_function_from_name(func)
     return validate_scope
 
@@ -62,9 +65,10 @@ def get_basicinfo_func(security_definition):
     >>> get_basicinfo_func({'x-basicInfoFunc': 'foo.bar'})
     '<function foo.bar>'
     """
-    func = (security_definition.get("x-basicInfoFunc") or
-            os.environ.get('BASICINFO_FUNC'))
-    if func:
+    if func := (
+        security_definition.get("x-basicInfoFunc")
+        or os.environ.get('BASICINFO_FUNC')
+    ):
         return get_function_from_name(func)
     return None
 
@@ -77,9 +81,10 @@ def get_apikeyinfo_func(security_definition):
     >>> get_apikeyinfo_func({'x-apikeyInfoFunc': 'foo.bar'})
     '<function foo.bar>'
     """
-    func = (security_definition.get("x-apikeyInfoFunc") or
-            os.environ.get('APIKEYINFO_FUNC'))
-    if func:
+    if func := (
+        security_definition.get("x-apikeyInfoFunc")
+        or os.environ.get('APIKEYINFO_FUNC')
+    ):
         return get_function_from_name(func)
     return None
 
@@ -92,9 +97,10 @@ def get_bearerinfo_func(security_definition):
     >>> get_bearerinfo_func({'x-bearerInfoFunc': 'foo.bar'})
     '<function foo.bar>'
     """
-    func = (security_definition.get("x-bearerInfoFunc") or
-            os.environ.get('BEARERINFO_FUNC'))
-    if func:
+    if func := (
+        security_definition.get("x-bearerInfoFunc")
+        or os.environ.get('BEARERINFO_FUNC')
+    ):
         return get_function_from_name(func)
     return None
 
@@ -335,7 +341,8 @@ def get_tokeninfo_remote(token_info_url, token):
     :type token: str
     :rtype: dict
     """
-    token_request = httpx.get(token_info_url, headers={'Authorization': 'Bearer {}'.format(token)}, timeout=5)
-    if not token_request.ok:
-        return None
-    return token_request.json()
+    token_request = httpx.get(
+        token_info_url, headers={'Authorization': f'Bearer {token}'}, timeout=5
+    )
+
+    return token_request.json() if token_request.ok else None

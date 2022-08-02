@@ -22,7 +22,7 @@ class MockResolver(Resolver):
         operation_id = self.resolve_operation_id(operation)
         if not operation_id:
             # just generate an unique operation ID
-            operation_id = 'mock-{}'.format(self._operation_id_counter)
+            operation_id = f'mock-{self._operation_id_counter}'
             self._operation_id_counter += 1
 
         mock_func = functools.partial(self.mock_operation, operation=operation)
@@ -31,12 +31,14 @@ class MockResolver(Resolver):
         else:
             try:
                 func = self.resolve_function_from_operation_id(operation_id)
-                msg = "... Successfully resolved operationId '{}'! Mock is *not* used for this operation.".format(
-                    operation_id)
+                msg = f"... Successfully resolved operationId '{operation_id}'! Mock is *not* used for this operation."
+
                 logger.debug(msg)
             except ResolverError as resolution_error:
-                logger.debug('... {}! Mock function is used for this operation.'.format(
-                    resolution_error.reason.capitalize()))
+                logger.debug(
+                    f'... {resolution_error.reason.capitalize()}! Mock function is used for this operation.'
+                )
+
                 func = mock_func
         return Resolution(func, operation_id)
 

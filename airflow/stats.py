@@ -191,7 +191,7 @@ def stat_name_default_handler(stat_name, max_length=250) -> str:
         raise InvalidStatsNameException(
             f"The stat_name ({stat_name}) has to be less than {max_length} characters."
         )
-    if not all((c in ALLOWED_CHARACTERS) for c in stat_name):
+    if any(c not in ALLOWED_CHARACTERS for c in stat_name):
         raise InvalidStatsNameException(
             f"The stat name ({stat_name}) has to be composed with characters in {ALLOWED_CHARACTERS}."
         )
@@ -340,14 +340,14 @@ class _Stats(type):
     factory = None
     instance: Optional[StatsLogger] = None
 
-    def __getattr__(cls, name):
-        if not cls.instance:
+    def __getattr__(self, name):
+        if not self.instance:
             try:
-                cls.instance = cls.factory()
+                self.instance = self.factory()
             except (socket.gaierror, ImportError) as e:
                 log.error("Could not configure StatsClient: %s, using DummyStatsLogger instead.", e)
-                cls.instance = DummyStatsLogger()
-        return getattr(cls.instance, name)
+                self.instance = DummyStatsLogger()
+        return getattr(self.instance, name)
 
     def __init__(cls, *args, **kwargs):
         super().__init__(cls)
@@ -409,12 +409,9 @@ class _Stats(type):
         """Get constant DataDog tags to add to all stats"""
         tags = []
         tags_in_string = conf.get('metrics', 'statsd_datadog_tags', fallback=None)
-        if tags_in_string is None or tags_in_string == '':
-            return tags
-        else:
-            for key_value in tags_in_string.split(','):
-                tags.append(key_value)
-            return tags
+        if tags_in_string is not None and tags_in_string != '':
+            tags.extend(iter(tags_in_string.split(',')))
+        return tags
 
 
 if TYPE_CHECKING:

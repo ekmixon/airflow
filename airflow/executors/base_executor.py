@@ -139,10 +139,11 @@ class BaseExecutor(LoggingMixin):
 
     def heartbeat(self) -> None:
         """Heartbeat sent to trigger new jobs."""
-        if not self.parallelism:
-            open_slots = len(self.queued_tasks)
-        else:
-            open_slots = self.parallelism - len(self.running)
+        open_slots = (
+            self.parallelism - len(self.running)
+            if self.parallelism
+            else len(self.queued_tasks)
+        )
 
         num_running_tasks = len(self.running)
         num_queued_tasks = len(self.queued_tasks)
@@ -294,7 +295,7 @@ class BaseExecutor(LoggingMixin):
     @staticmethod
     def validate_command(command: List[str]) -> None:
         """Check if the command to execute is airflow command"""
-        if command[0:3] != ["airflow", "tasks", "run"]:
+        if command[:3] != ["airflow", "tasks", "run"]:
             raise ValueError('The command must start with ["airflow", "tasks", "run"].')
 
     def debug_dump(self):

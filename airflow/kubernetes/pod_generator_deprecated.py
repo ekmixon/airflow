@@ -68,7 +68,7 @@ def make_safe_label_value(string):
 
     if len(safe_label) > MAX_LABEL_LEN or string != safe_label:
         safe_hash = hashlib.md5(string.encode()).hexdigest()[:9]
-        safe_label = safe_label[: MAX_LABEL_LEN - len(safe_hash) - 1] + "-" + safe_hash
+        safe_label = f"{safe_label[: MAX_LABEL_LEN - len(safe_hash) - 1]}-{safe_hash}"
 
     return safe_label
 
@@ -192,17 +192,20 @@ class PodGenerator:
 
         if envs:
             if isinstance(envs, dict):
-                for key, val in envs.items():
-                    self.container.env.append(k8s.V1EnvVar(name=key, value=val))
+                self.container.env.extend(
+                    k8s.V1EnvVar(name=key, value=val) for key, val in envs.items()
+                )
+
             elif isinstance(envs, list):
                 self.container.env.extend(envs)
 
         configmaps = configmaps or []
-        self.container.env_from = []
-        for configmap in configmaps:
-            self.container.env_from.append(
-                k8s.V1EnvFromSource(config_map_ref=k8s.V1ConfigMapEnvSource(name=configmap))
+        self.container.env_from = [
+            k8s.V1EnvFromSource(
+                config_map_ref=k8s.V1ConfigMapEnvSource(name=configmap)
             )
+            for configmap in configmaps
+        ]
 
         self.container.command = cmds or []
         self.container.args = args or []
@@ -229,8 +232,10 @@ class PodGenerator:
         self.spec.image_pull_secrets = []
 
         if image_pull_secrets:
-            for image_pull_secret in image_pull_secrets.split(','):
-                self.spec.image_pull_secrets.append(k8s.V1LocalObjectReference(name=image_pull_secret))
+            self.spec.image_pull_secrets.extend(
+                k8s.V1LocalObjectReference(name=image_pull_secret)
+                for image_pull_secret in image_pull_secrets.split(',')
+            )
 
         # Attach sidecar
         self.extract_xcom = extract_xcom
@@ -321,6 +326,4 @@ class PodGenerator:
             return None
 
         safe_uuid = uuid.uuid4().hex
-        safe_pod_id = dag_id[: MAX_POD_ID_LEN - len(safe_uuid) - 1] + "-" + safe_uuid
-
-        return safe_pod_id
+        return f"{dag_id[: MAX_POD_ID_LEN - len(safe_uuid) - 1]}-{safe_uuid}"

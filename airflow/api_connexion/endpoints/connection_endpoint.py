@@ -104,7 +104,6 @@ def patch_connection(
     except ValidationError as err:
         # If validation get to here, it is extra field validation.
         raise BadRequest(detail=str(err.messages))
-    non_update_fields = ['connection_id', 'conn_id']
     connection = session.query(Connection).filter_by(conn_id=connection_id).first()
     if connection is None:
         raise NotFound(
@@ -116,6 +115,7 @@ def patch_connection(
     if update_mask:
         update_mask = [i.strip() for i in update_mask]
         data_ = {}
+        non_update_fields = ['connection_id', 'conn_id']
         for field in update_mask:
             if field in data and field not in non_update_fields:
                 data_[field] = data[field]

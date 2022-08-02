@@ -81,12 +81,12 @@ with DAG(
 
             from colorama import Back, Fore, Style
 
-            print(Fore.RED + 'some red text')
-            print(Back.GREEN + 'and with a green background')
-            print(Style.DIM + 'and in dim text')
+            print(f'{Fore.RED}some red text')
+            print(f'{Back.GREEN}and with a green background')
+            print(f'{Style.DIM}and in dim text')
             print(Style.RESET_ALL)
             for _ in range(10):
-                print(Style.DIM + 'Please wait...', flush=True)
+                print(f'{Style.DIM}Please wait...', flush=True)
                 sleep(10)
             print('Finished')
 

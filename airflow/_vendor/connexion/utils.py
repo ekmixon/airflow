@@ -48,9 +48,7 @@ def deep_merge(a, b):
         if key in a:
             if isinstance(a[key], dict) and isinstance(b[key], dict):
                 deep_merge(a[key], b[key])
-            elif a[key] == b[key]:
-                pass
-            else:
+            elif a[key] != b[key]:
                 # b overwrites a
                 a[key] = b[key]
         else:
@@ -111,11 +109,10 @@ def get_function_from_name(function_name):
             module = importlib.import_module(module_name)
         except ImportError as import_error:
             last_import_error = import_error
-            if '.' in module_name:
-                module_name, attr_path1 = module_name.rsplit('.', 1)
-                attr_path = '{0}.{1}'.format(attr_path1, attr_path)
-            else:
+            if '.' not in module_name:
                 raise
+            module_name, attr_path1 = module_name.rsplit('.', 1)
+            attr_path = '{0}.{1}'.format(attr_path1, attr_path)
     try:
         function = deep_getattr(module, attr_path)
     except AttributeError:
@@ -171,10 +168,7 @@ def is_null(value):
     if hasattr(value, 'strip') and value.strip() in ['null', 'None']:
         return True
 
-    if value is None:
-        return True
-
-    return False
+    return value is None
 
 
 def has_coroutine(function, api=None):
@@ -226,11 +220,7 @@ def yamldumper(openapi):
         return False
 
     def my_represent_scalar(self, tag, value, style=None):
-        if should_use_block(value):
-            style = '|'
-        else:
-            style = self.default_style
-
+        style = '|' if should_use_block(value) else self.default_style
         node = yaml.representer.ScalarNode(tag, value, style=style)
         if self.alias_key is not None:
             self.represented_objects[self.alias_key] = node

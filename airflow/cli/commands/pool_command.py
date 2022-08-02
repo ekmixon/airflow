@@ -106,7 +106,7 @@ def pool_import_helper(filepath):
     try:
         pools_json = json.loads(data)
     except JSONDecodeError as e:
-        raise SystemExit("Invalid json file: " + str(e))
+        raise SystemExit(f"Invalid json file: {str(e)}")
     pools = []
     failed = []
     for k, v in pools_json.items():
@@ -120,10 +120,11 @@ def pool_import_helper(filepath):
 def pool_export_helper(filepath):
     """Helps export all of the pools to the json file"""
     api_client = get_current_api_client()
-    pool_dict = {}
     pools = api_client.get_pools()
-    for pool in pools:
-        pool_dict[pool[0]] = {"slots": pool[1], "description": pool[2]}
+    pool_dict = {
+        pool[0]: {"slots": pool[1], "description": pool[2]} for pool in pools
+    }
+
     with open(filepath, 'w') as poolfile:
         poolfile.write(json.dumps(pool_dict, sort_keys=True, indent=4))
     return pools

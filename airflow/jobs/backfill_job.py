@@ -776,8 +776,9 @@ class BackfillJob(BaseJob):
             dagrun_end_date = pendulum.instance(self.bf_end_date)
         dagrun_infos = list(self.dag.iter_dagrun_infos_between(dagrun_start_date, dagrun_end_date))
         if self.run_backwards:
-            tasks_that_depend_on_past = [t.task_id for t in self.dag.task_dict.values() if t.depends_on_past]
-            if tasks_that_depend_on_past:
+            if tasks_that_depend_on_past := [
+                t.task_id for t in self.dag.task_dict.values() if t.depends_on_past
+            ]:
                 raise AirflowException(
                     f'You cannot backfill backwards because one or more '
                     f'tasks depend_on_past: {",".join(tasks_that_depend_on_past)}'
@@ -827,8 +828,9 @@ class BackfillJob(BaseJob):
                 )
 
                 remaining_dates = ti_status.total_runs - len(ti_status.executed_dag_run_dates)
-                err = self._collect_errors(ti_status=ti_status, session=session)
-                if err:
+                if err := self._collect_errors(
+                    ti_status=ti_status, session=session
+                ):
                     raise BackfillUnfinished(err, ti_status)
 
                 if remaining_dates > 0:

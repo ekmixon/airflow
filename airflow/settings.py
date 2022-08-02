@@ -380,20 +380,22 @@ def validate_session():
     """Validate ORM Session"""
     global engine
 
-    worker_precheck = conf.getboolean('celery', 'worker_precheck', fallback=False)
-    if not worker_precheck:
+    if not (
+        worker_precheck := conf.getboolean(
+            'celery', 'worker_precheck', fallback=False
+        )
+    ):
         return True
-    else:
-        check_session = sessionmaker(bind=engine)
-        session = check_session()
-        try:
-            session.execute("select 1")
-            conn_status = True
-        except exc.DBAPIError as err:
-            log.error(err)
-            conn_status = False
-        session.close()
-        return conn_status
+    check_session = sessionmaker(bind=engine)
+    session = check_session()
+    try:
+        session.execute("select 1")
+        conn_status = True
+    except exc.DBAPIError as err:
+        log.error(err)
+        conn_status = False
+    session.close()
+    return conn_status
 
 
 def configure_action_logging():
@@ -507,7 +509,7 @@ def initialize():
 # Const stuff
 
 KILOBYTE = 1024
-MEGABYTE = KILOBYTE * KILOBYTE
+MEGABYTE = KILOBYTE**2
 WEB_COLORS = {'LIGHTBLUE': '#4d9de0', 'LIGHTORANGE': '#FF9933'}
 
 

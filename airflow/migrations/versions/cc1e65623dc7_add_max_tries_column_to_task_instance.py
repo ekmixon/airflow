@@ -87,10 +87,7 @@ def upgrade():
                     ti.max_tries = ti.try_number
                 else:
                     task = dag.get_task(ti.task_id)
-                    if task.retries:
-                        ti.max_tries = task.retries
-                    else:
-                        ti.max_tries = ti.try_number
+                    ti.max_tries = task.retries or ti.try_number
                 session.merge(ti)
 
             session.commit()

@@ -40,10 +40,10 @@ from airflow.www.fab_security.sqla.models import Role, User
 def get_user(*, username: str) -> APIResponse:
     """Get a user"""
     ab_security_manager = current_app.appbuilder.sm
-    user = ab_security_manager.find_user(username=username)
-    if not user:
+    if user := ab_security_manager.find_user(username=username):
+        return user_collection_item_schema.dump(user)
+    else:
         raise NotFound(title="User not found", detail=f"The User with username `{username}` was not found")
-    return user_collection_item_schema.dump(user)
 
 
 @security.requires_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_USER)])
@@ -130,15 +130,21 @@ def patch_user(*, username: str, update_mask: UpdateMask = None) -> APIResponse:
         raise NotFound(title="User not found", detail=detail)
     # Check unique username
     new_username = data.get('username')
-    if new_username and new_username != username:
-        if security_manager.find_user(username=new_username):
-            raise AlreadyExists(detail=f"The username `{new_username}` already exists")
+    if (
+        new_username
+        and new_username != username
+        and security_manager.find_user(username=new_username)
+    ):
+        raise AlreadyExists(detail=f"The username `{new_username}` already exists")
 
     # Check unique email
     email = data.get('email')
-    if email and email != user.email:
-        if security_manager.find_user(email=email):
-            raise AlreadyExists(detail=f"The email `{email}` already exists")
+    if (
+        email
+        and email != user.email
+        and security_manager.find_user(email=email)
+    ):
+        raise AlreadyExists(detail=f"The email `{email}` already exists")
 
     # Get fields to update.
     if update_mask is not None:

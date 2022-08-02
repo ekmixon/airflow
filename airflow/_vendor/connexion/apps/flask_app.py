@@ -62,7 +62,7 @@ class FlaskApp(AbstractApp):
         # type: (int, FunctionType) -> None
         self.app.register_error_handler(error_code, function)
 
-    def run(self, port=None, server=None, debug=None, host=None, **options):  # pragma: no cover
+    def run(self, port=None, server=None, debug=None, host=None, **options):    # pragma: no cover
         """
         Runs the application on a local development server.
         :param host: the host interface to bind on.
@@ -115,20 +115,13 @@ class FlaskApp(AbstractApp):
             logger.info('Listening on %s:%s..', self.host, self.port)
             http_server.serve_forever()
         else:
-            raise Exception('Server {} not recognized'.format(self.server))
+            raise Exception(f'Server {self.server} not recognized')
 
 
 class FlaskJSONEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime.datetime):
-            if o.tzinfo:
-                # eg: '2015-09-25T23:14:42.588601+00:00'
-                return o.isoformat('T')
-            else:
-                # No timezone present - assume UTC.
-                # eg: '2015-09-25T23:14:42.588601Z'
-                return o.isoformat('T') + 'Z'
-
+            return o.isoformat('T') if o.tzinfo else o.isoformat('T') + 'Z'
         if isinstance(o, datetime.date):
             return o.isoformat()
 

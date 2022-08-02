@@ -119,9 +119,12 @@ class ClearTaskInstanceFormSchema(Schema):
         """Validates clear task instance form"""
         if data["only_failed"] and data["only_running"]:
             raise ValidationError("only_failed and only_running both are set to True")
-        if data["start_date"] and data["end_date"]:
-            if data["start_date"] > data["end_date"]:
-                raise ValidationError("end_date is sooner than start_date")
+        if (
+            data["start_date"]
+            and data["end_date"]
+            and data["start_date"] > data["end_date"]
+        ):
+            raise ValidationError("end_date is sooner than start_date")
 
 
 class SetTaskInstanceStateFormSchema(Schema):

@@ -48,7 +48,7 @@ class AbstractApp(metaclass=abc.ABCMeta):
         self.options = ConnexionOptions(options)
 
         self.server = server
-        self.server_args = dict() if server_args is None else server_args
+        self.server_args = {} if server_args is None else server_args
         self.app = self.create_app()
 
         # we get our application root path to avoid duplicating logic
@@ -131,7 +131,7 @@ class AbstractApp(metaclass=abc.ABCMeta):
 
         auth_all_paths = auth_all_paths if auth_all_paths is not None else self.auth_all_paths
         # TODO test if base_path starts with an / (if not none)
-        arguments = arguments or dict()
+        arguments = arguments or {}
         arguments = dict(self.arguments, **arguments)  # copy global arguments and update with api specific
 
         if isinstance(specification, dict):
@@ -141,20 +141,21 @@ class AbstractApp(metaclass=abc.ABCMeta):
 
         api_options = self.options.extend(options)
 
-        api = self.api_cls(specification,
-                           base_path=base_path,
-                           arguments=arguments,
-                           resolver=resolver,
-                           resolver_error_handler=resolver_error_handler,
-                           validate_responses=validate_responses,
-                           strict_validation=strict_validation,
-                           auth_all_paths=auth_all_paths,
-                           debug=self.debug,
-                           validator_map=validator_map,
-                           pythonic_params=pythonic_params,
-                           pass_context_arg_name=pass_context_arg_name,
-                           options=api_options.as_dict())
-        return api
+        return self.api_cls(
+            specification,
+            base_path=base_path,
+            arguments=arguments,
+            resolver=resolver,
+            resolver_error_handler=resolver_error_handler,
+            validate_responses=validate_responses,
+            strict_validation=strict_validation,
+            auth_all_paths=auth_all_paths,
+            debug=self.debug,
+            validator_map=validator_map,
+            pythonic_params=pythonic_params,
+            pass_context_arg_name=pass_context_arg_name,
+            options=api_options.as_dict(),
+        )
 
     def _resolver_error_handler(self, *args, **kwargs):
         from airflow._vendor.connexion.handlers import ResolverErrorHandler
@@ -196,8 +197,7 @@ class AbstractApp(metaclass=abc.ABCMeta):
                         limited to (`GET`, `POST` etc.).  By default a rule just listens for `GET` (and implicitly
                         `HEAD`).
         """
-        log_details = {'endpoint': endpoint, 'view_func': view_func.__name__}
-        log_details.update(options)
+        log_details = {'endpoint': endpoint, 'view_func': view_func.__name__} | options
         logger.debug('Adding %s', rule, extra=log_details)
         self.app.add_url_rule(rule, endpoint, view_func, **options)
 

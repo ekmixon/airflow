@@ -50,7 +50,7 @@ def _trigger_dag(
     if dag_id not in dag_bag.dags:
         raise DagNotFound(f"Dag id {dag_id} not found")
 
-    execution_date = execution_date if execution_date else timezone.utcnow()
+    execution_date = execution_date or timezone.utcnow()
 
     if not timezone.is_localized(execution_date):
         raise ValueError("The execution_date should be localized")
@@ -67,9 +67,9 @@ def _trigger_dag(
             )
 
     run_id = run_id or DagRun.generate_run_id(DagRunType.MANUAL, execution_date)
-    dag_run = DagRun.find_duplicate(dag_id=dag_id, execution_date=execution_date, run_id=run_id)
-
-    if dag_run:
+    if dag_run := DagRun.find_duplicate(
+        dag_id=dag_id, execution_date=execution_date, run_id=run_id
+    ):
         raise DagRunAlreadyExists(
             f"A Dag Run already exists for dag id {dag_id} at {execution_date} with run id {run_id}"
         )

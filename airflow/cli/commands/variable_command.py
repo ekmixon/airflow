@@ -41,10 +41,9 @@ def variables_get(args):
     try:
         if args.default is None:
             var = Variable.get(args.key, deserialize_json=args.json)
-            print(var)
         else:
             var = Variable.get(args.key, deserialize_json=args.json, default_var=args.default)
-            print(var)
+        print(var)
     except (ValueError, KeyError) as e:
         raise SystemExit(str(e).strip("'\""))
 

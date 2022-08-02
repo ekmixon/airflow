@@ -193,24 +193,24 @@ class KubernetesJobWatcher(multiprocessing.Process, LoggingMixin):
         event: Any,
     ) -> None:
         """Process status response"""
-        if status == 'Pending':
+        if status == 'Failed':
+            self.log.error('Event: %s Failed', pod_id)
+            self.watcher_queue.put((pod_id, namespace, State.FAILED, annotations, resource_version))
+        elif status == 'Pending':
             if event['type'] == 'DELETED':
                 self.log.info('Event: Failed to start pod %s', pod_id)
                 self.watcher_queue.put((pod_id, namespace, State.FAILED, annotations, resource_version))
             else:
                 self.log.info('Event: %s Pending', pod_id)
-        elif status == 'Failed':
-            self.log.error('Event: %s Failed', pod_id)
-            self.watcher_queue.put((pod_id, namespace, State.FAILED, annotations, resource_version))
-        elif status == 'Succeeded':
-            self.log.info('Event: %s Succeeded', pod_id)
-            self.watcher_queue.put((pod_id, namespace, None, annotations, resource_version))
         elif status == 'Running':
             if event['type'] == 'DELETED':
                 self.log.info('Event: Pod %s deleted before it could complete', pod_id)
                 self.watcher_queue.put((pod_id, namespace, State.FAILED, annotations, resource_version))
             else:
                 self.log.info('Event: %s is Running', pod_id)
+        elif status == 'Succeeded':
+            self.log.info('Event: %s Succeeded', pod_id)
+            self.watcher_queue.put((pod_id, namespace, None, annotations, resource_version))
         else:
             self.log.warning(
                 'Event: Invalid state: %s on pod: %s in namespace %s with annotations: %s with '
@@ -298,7 +298,7 @@ class AirflowKubernetesScheduler(LoggingMixin):
         key, command, kube_executor_config, pod_template_file = next_job
         dag_id, task_id, run_id, try_number = key
 
-        if command[0:3] != ["airflow", "tasks", "run"]:
+        if command[:3] != ["airflow", "tasks", "run"]:
             raise ValueError('The command must start with ["airflow", "tasks", "run"].')
 
         base_worker_pod = get_base_pod_from_template(pod_template_file, self.kube_config)
@@ -374,8 +374,7 @@ class AirflowKubernetesScheduler(LoggingMixin):
         self.log.info(
             'Attempting to finish pod; pod_id: %s; state: %s; annotations: %s', pod_id, state, annotations
         )
-        key = annotations_to_key(annotations=annotations)
-        if key:
+        if key := annotations_to_key(annotations=annotations):
             self.log.debug('finishing job %s - %s (%s)', key, state, pod_id)
             self.result_queue.put((key, state, pod_id, namespace, resource_version))
 
@@ -479,7 +478,10 @@ class KubernetesExecutor(BaseExecutor):
                 kwargs.update(**self.kube_config.kube_client_request_args)
 
             # Try run_id first
-            kwargs['label_selector'] += ',run_id=' + pod_generator.make_safe_label_value(task.run_id)
+            kwargs[
+                'label_selector'
+            ] += f',run_id={pod_generator.make_safe_label_value(task.run_id)}'
+
             pod_list = self.kube_client.list_namespaced_pod(self.kube_config.kube_namespace, **kwargs)
             if pod_list.items:
                 continue
@@ -666,7 +668,7 @@ class KubernetesExecutor(BaseExecutor):
                     raise AirflowException(NOT_STARTED_MESSAGE)
                 if state != State.FAILED or self.kube_config.delete_worker_pods_on_failure:
                     self.kube_scheduler.delete_pod(pod_id, namespace)
-                    self.log.info('Deleted pod: %s in namespace %s', str(key), str(namespace))
+                    self.log.info('Deleted pod: %s in namespace %s', str(key), namespace)
             try:
                 self.running.remove(key)
             except KeyError:

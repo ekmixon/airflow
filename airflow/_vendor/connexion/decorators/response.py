@@ -54,8 +54,7 @@ class ResponseValidator(BaseDecorator):
             # converting to set is needed to support python 2.7
             response_definition_header_keys = set(response_definition.get("headers").keys())
             header_keys = set(headers.keys())
-            missing_keys = response_definition_header_keys - header_keys
-            if missing_keys:
+            if missing_keys := response_definition_header_keys - header_keys:
                 pretty_list = ', '.join(missing_keys)
                 msg = ("Keys in header don't match response specification. "
                        "Difference: {0}").format(pretty_list)
@@ -74,9 +73,11 @@ class ResponseValidator(BaseDecorator):
         :type response_schema: dict
         :rtype bool
         """
-        if not response_schema:
-            return False
-        return all_json([self.mimetype]) or self.mimetype == 'text/plain'
+        return (
+            all_json([self.mimetype]) or self.mimetype == 'text/plain'
+            if response_schema
+            else False
+        )
 
     def __call__(self, function):
         """

@@ -86,9 +86,7 @@ def get_task_instance(
 
 
 def _convert_state(states: Optional[Iterable[str]]) -> Optional[List[Optional[str]]]:
-    if not states:
-        return None
-    return [State.NONE if s == "none" else s for s in states]
+    return [State.NONE if s == "none" else s for s in states] if states else None
 
 
 def _apply_array_filter(query: Query, key: ClauseElement, values: Optional[Iterable[Any]]) -> Query:

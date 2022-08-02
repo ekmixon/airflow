@@ -42,13 +42,12 @@ def delete_dag(dag_id: str, keep_records_in_log: bool = True, session=None) -> i
     :return count of deleted dags
     """
     log.info("Deleting DAG: %s", dag_id)
-    running_tis = (
+    if running_tis := (
         session.query(models.TaskInstance.state)
         .filter(models.TaskInstance.dag_id == dag_id)
         .filter(models.TaskInstance.state == State.RUNNING)
         .first()
-    )
-    if running_tis:
+    ):
         raise AirflowException("TaskInstances still running")
     dag = session.query(DagModel).filter(DagModel.dag_id == dag_id).first()
     if dag is None:
@@ -65,7 +64,7 @@ def delete_dag(dag_id: str, keep_records_in_log: bool = True, session=None) -> i
         if hasattr(model, "dag_id"):
             if keep_records_in_log and model.__name__ == 'Log':
                 continue
-            cond = or_(model.dag_id == dag_id, model.dag_id.like(dag_id + ".%"))
+            cond = or_(model.dag_id == dag_id, model.dag_id.like(f"{dag_id}.%"))
             count += session.query(model).filter(cond).delete(synchronize_session='fetch')
     if dag.is_subdag:
         parent_dag_id, task_id = dag_id.rsplit(".", 1)

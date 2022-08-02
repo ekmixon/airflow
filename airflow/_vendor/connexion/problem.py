@@ -34,7 +34,7 @@ def problem(status, title, detail, type=None, instance=None, headers=None, ext=N
     if instance:
         problem_response['instance'] = instance
     if ext:
-        problem_response.update(ext)
+        problem_response |= ext
 
     mimetype = content_type = 'application/problem+json'
     return ConnexionResponse(status, mimetype, content_type,

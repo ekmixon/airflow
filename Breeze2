@@ -62,18 +62,11 @@ if needs_installation():
         # and sys.executable points to the Bundled exe file.
         BUILD_BREEZE_VENV_DIR.mkdir(parents=True, exist_ok=True)
         subprocess.run(["python3", "-m", "venv", f"{BUILD_BREEZE_VENV_DIR}"], check=True)
-    if os.name == 'nt':
-        subprocess.run(
-            [f"{BUILD_BREEZE_VENV_PYTHON}", "-m", "pip", "install", "--upgrade", "-e", "."],
-            cwd=BREEZE_SOURCE_PATH,
-            check=True,
-        )
-    else:
-        subprocess.run(
-            [f"{BUILD_BREEZE_VENV_PYTHON}", "-m", "pip", "install", "--upgrade", "-e", "."],
-            cwd=BREEZE_SOURCE_PATH,
-            check=True,
-        )
+    subprocess.run(
+        [f"{BUILD_BREEZE_VENV_PYTHON}", "-m", "pip", "install", "--upgrade", "-e", "."],
+        cwd=BREEZE_SOURCE_PATH,
+        check=True,
+    )
     save_config()
 
 if os.name == 'nt':

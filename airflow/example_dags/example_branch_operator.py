@@ -18,6 +18,7 @@
 
 """Example DAG demonstrating the usage of the BranchPythonOperator."""
 
+
 import random
 from datetime import datetime
 
@@ -56,9 +57,7 @@ with DAG(
             task_id=option,
         )
 
-        dummy_follow = DummyOperator(
-            task_id='follow_' + option,
-        )
+        dummy_follow = DummyOperator(task_id=f'follow_{option}')
 
         # Label is optional here, but it can help identify more complex branches
         branching >> Label(option) >> t >> dummy_follow >> join

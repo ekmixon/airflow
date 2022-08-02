@@ -73,8 +73,9 @@ class KubeConfig:
             self.kubernetes_section, 'worker_pods_queued_check_interval'
         )
 
-        kube_client_request_args = conf.get(self.kubernetes_section, 'kube_client_request_args')
-        if kube_client_request_args:
+        if kube_client_request_args := conf.get(
+            self.kubernetes_section, 'kube_client_request_args'
+        ):
             self.kube_client_request_args = json.loads(kube_client_request_args)
             if '_request_timeout' in self.kube_client_request_args and isinstance(
                 self.kube_client_request_args['_request_timeout'], list
@@ -84,8 +85,9 @@ class KubeConfig:
                 )
         else:
             self.kube_client_request_args = {}
-        delete_option_kwargs = conf.get(self.kubernetes_section, 'delete_option_kwargs')
-        if delete_option_kwargs:
+        if delete_option_kwargs := conf.get(
+            self.kubernetes_section, 'delete_option_kwargs'
+        ):
             self.delete_option_kwargs = json.loads(delete_option_kwargs)
         else:
             self.delete_option_kwargs = {}

@@ -55,10 +55,10 @@ def _check_action_and_resource(sm: AirflowSecurityManager, perms: List[Tuple[str
 def get_role(*, role_name: str) -> APIResponse:
     """Get role"""
     ab_security_manager = current_app.appbuilder.sm
-    role = ab_security_manager.find_role(name=role_name)
-    if not role:
+    if role := ab_security_manager.find_role(name=role_name):
+        return role_schema.dump(role)
+    else:
         raise NotFound(title="Role not found", detail=f"Role with name {role_name!r} was not found")
-    return role_schema.dump(role)
 
 
 @security.requires_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_ROLE)])
@@ -116,7 +116,7 @@ def patch_role(*, role_name: str, update_mask: UpdateMask = None) -> APIResponse
         update_mask = [i.strip() for i in update_mask]
         data_ = {}
         for field in update_mask:
-            if field in data and not field == "permissions":
+            if field in data and field != "permissions":
                 data_[field] = data[field]
             elif field == "actions":
                 data_["permissions"] = data['permissions']

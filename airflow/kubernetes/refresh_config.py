@@ -63,8 +63,7 @@ class RefreshKubeConfigLoader(KubeConfigLoader):
                 logging.error('exec: missing token field in plugin output')
                 return None
             self.token = f"Bearer {status['token']}"
-            ts_str = status.get('expirationTimestamp')
-            if ts_str:
+            if ts_str := status.get('expirationTimestamp'):
                 self.api_key_expire_ts = _parse_timestamp(ts_str)
             return True
         except Exception as e:

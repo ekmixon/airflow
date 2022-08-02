@@ -17,6 +17,7 @@
 # under the License.
 
 """Example DAG demonstrating the usage of the ShortCircuitOperator."""
+
 from datetime import datetime
 
 from airflow import DAG
@@ -40,8 +41,8 @@ with DAG(
         python_callable=lambda: False,
     )
 
-    ds_true = [DummyOperator(task_id='true_' + str(i)) for i in [1, 2]]
-    ds_false = [DummyOperator(task_id='false_' + str(i)) for i in [1, 2]]
+    ds_true = [DummyOperator(task_id=f'true_{str(i)}') for i in [1, 2]]
+    ds_false = [DummyOperator(task_id=f'false_{str(i)}') for i in [1, 2]]
 
     chain(cond_true, *ds_true)
     chain(cond_false, *ds_false)

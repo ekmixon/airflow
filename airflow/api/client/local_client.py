@@ -38,10 +38,10 @@ class Client(api_client.Client):
         return f"Removed {count} record(s)"
 
     def get_pool(self, name):
-        pool = Pool.get_pool(pool_name=name)
-        if not pool:
+        if pool := Pool.get_pool(pool_name=name):
+            return pool.pool, pool.slots, pool.description
+        else:
             raise PoolNotFound(f"Pool {name} not found")
-        return pool.pool, pool.slots, pool.description
 
     def get_pools(self):
         return [(p.pool, p.slots, p.description) for p in Pool.get_pools()]
@@ -64,5 +64,4 @@ class Client(api_client.Client):
         return pool.pool, pool.slots, pool.description
 
     def get_lineage(self, dag_id, execution_date):
-        lineage = get_lineage_api(dag_id=dag_id, execution_date=execution_date)
-        return lineage
+        return get_lineage_api(dag_id=dag_id, execution_date=execution_date)

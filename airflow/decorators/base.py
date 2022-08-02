@@ -74,9 +74,7 @@ def get_unique_task_id(
         for task_id in dag.task_ids
         if re.match(rf'^{core}__\d+$', task_id)
     )
-    if not suffixes:
-        return f'{core}__1'
-    return f'{core}__{suffixes[-1] + 1}'
+    return f'{core}__{suffixes[-1] + 1}' if suffixes else f'{core}__1'
 
 
 class DecoratedOperator(BaseOperator):
@@ -144,19 +142,18 @@ class DecoratedOperator(BaseOperator):
         """
         if not self.multiple_outputs:
             return return_value
-        if isinstance(return_value, dict):
-            for key in return_value.keys():
-                if not isinstance(key, str):
-                    raise AirflowException(
-                        'Returned dictionary keys must be strings when using '
-                        f'multiple_outputs, found {key} ({type(key)}) instead'
-                    )
-            for key, value in return_value.items():
-                xcom_push(context, key, value)
-        else:
+        if not isinstance(return_value, dict):
             raise AirflowException(
                 f'Returned output was type {type(return_value)} expected dictionary for multiple_outputs'
             )
+        for key in return_value.keys():
+            if not isinstance(key, str):
+                raise AirflowException(
+                    'Returned dictionary keys must be strings when using '
+                    f'multiple_outputs, found {key} ({type(key)}) instead'
+                )
+        for key, value in return_value.items():
+            xcom_push(context, key, value)
         return return_value
 
     def _hook_apply_defaults(self, *args, **kwargs):

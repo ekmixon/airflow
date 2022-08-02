@@ -143,7 +143,7 @@ class BaseOperatorMeta(abc.ABCMeta):
             from airflow.models.dag import DagContext
             from airflow.utils.task_group import TaskGroupContext
 
-            if len(args) > 0:
+            if args:
                 raise AirflowException("Use keyword arguments when initializing operators")
             dag_args: Dict[str, Any] = {}
             dag_params = ParamsDict()

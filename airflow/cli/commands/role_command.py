@@ -58,7 +58,7 @@ def roles_export(args):
     roles = appbuilder.sm.get_all_roles()
     exporting_roles = [role.name for role in roles if role.name not in EXISTING_ROLES]
     filename = os.path.expanduser(args.file)
-    kwargs = {} if not args.pretty else {'sort_keys': True, 'indent': 4}
+    kwargs = {'sort_keys': True, 'indent': 4} if args.pretty else {}
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(exporting_roles, f, **kwargs)
     print(f"{len(exporting_roles)} roles successfully exported to {filename}")

@@ -681,10 +681,13 @@ class DagFileProcessor(LoggingMixin):
         return len(dagbag.dags), len(dagbag.import_errors)
 
     def _deactivate_missing_dags(self, session: Session, dagbag: DagBag, file_path: str) -> None:
-        deactivated = (
+        if deactivated := (
             session.query(DagModel)
-            .filter(DagModel.fileloc == file_path, DagModel.is_active, ~DagModel.dag_id.in_(dagbag.dag_ids))
+            .filter(
+                DagModel.fileloc == file_path,
+                DagModel.is_active,
+                ~DagModel.dag_id.in_(dagbag.dag_ids),
+            )
             .update({DagModel.is_active: False}, synchronize_session="fetch")
-        )
-        if deactivated:
+        ):
             self.log.info("Deactivated %i DAGs which are no longer present in %s", deactivated, file_path)

@@ -78,9 +78,7 @@ class PiiAnonymizer(Anonymizer):
         return value
 
     def process_username(self, value) -> str:
-        if not value:
-            return value
-        return value[0] + "..." + value[-1]
+        return f"{value[0]}...{value[-1]}" if value else value
 
     def process_url(self, value) -> str:
         if not value:
@@ -110,11 +108,11 @@ class PiiAnonymizer(Anonymizer):
 
             # pack
             if username and password and host:
-                netloc = username + ":" + password + "@" + host
+                netloc = f"{username}:{password}@{host}"
             elif username and host:
-                netloc = username + "@" + host
+                netloc = f"{username}@{host}"
             elif password and host:
-                netloc = ":" + password + "@" + host
+                netloc = f":{password}@{host}"
             elif host:
                 netloc = host
             else:
@@ -193,10 +191,7 @@ class AirflowInfo:
                 data = [f for f in stdoutdata.split(b"\n") if f]
                 if grep:
                     data = [line for line in data if grep in line]
-                if len(data) != 1:
-                    return "NOT AVAILABLE"
-                else:
-                    return data[0].decode()
+                return "NOT AVAILABLE" if len(data) != 1 else data[0].decode()
         except OSError:
             return "NOT AVAILABLE"
 
@@ -209,7 +204,7 @@ class AirflowInfo:
             if module is None or module == str.__class__.__module__:
                 return o.__class__.__name__  # Avoid reporting __builtin__
             else:
-                return module + '.' + o.__class__.__name__
+                return f'{module}.{o.__class__.__name__}'
 
         try:
             handler_names = [get_fullname(handler) for handler in logging.getLogger('airflow.task').handlers]
@@ -317,7 +312,7 @@ class AirflowInfo:
         }
 
         console = console or AirflowConsole(show_header=False)
-        if output in ("table", "plain"):
+        if output in {"table", "plain"}:
             # Show each info as table with key, value column
             for key, info in all_info.items():
                 console.print(f"\n[bold][green]{key}[/bold][/green]", highlight=False)
@@ -368,7 +363,7 @@ def _send_report_to_fileio(info):
         print(link)
         print()
     except FileIoException as ex:
-        print(str(ex))
+        print(ex)
 
 
 @suppress_logs_and_warning

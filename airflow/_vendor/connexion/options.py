@@ -42,7 +42,7 @@ class ConnexionOptions(object):
             new_values = {}
 
         options = dict(self._options)
-        options.update(filter_values(new_values))
+        options |= filter_values(new_values)
         return ConnexionOptions(options, self.oas_version)
 
     def as_dict(self):

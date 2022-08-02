@@ -241,7 +241,7 @@ class DagRun(Base, LoggingMixin):
         else:
             query = query.filter(cls.state.in_([State.RUNNING, State.QUEUED]))
         query = query.group_by(cls.dag_id)
-        return {dag_id: count for dag_id, count in query.all()}
+        return dict(query.all())
 
     @classmethod
     def next_dagruns_to_examine(
@@ -419,16 +419,14 @@ class DagRun(Base, LoggingMixin):
         if state:
             if isinstance(state, str):
                 tis = tis.filter(TI.state == state)
-            else:
-                # this is required to deal with NULL values
-                if State.NONE in state:
-                    if all(x is None for x in state):
-                        tis = tis.filter(TI.state.is_(None))
-                    else:
-                        not_none_state = [s for s in state if s]
-                        tis = tis.filter(or_(TI.state.in_(not_none_state), TI.state.is_(None)))
+            elif State.NONE in state:
+                if all(x is None for x in state):
+                    tis = tis.filter(TI.state.is_(None))
                 else:
-                    tis = tis.filter(TI.state.in_(state))
+                    not_none_state = [s for s in state if s]
+                    tis = tis.filter(or_(TI.state.in_(not_none_state), TI.state.is_(None)))
+            else:
+                tis = tis.filter(TI.state.in_(state))
 
         if self.dag and self.dag.partial:
             tis = tis.filter(TI.task_id.in_(self.dag.task_ids))
@@ -589,7 +587,7 @@ class DagRun(Base, LoggingMixin):
         else:
             self.set_state(DagRunState.RUNNING)
 
-        if self._state == DagRunState.FAILED or self._state == DagRunState.SUCCESS:
+        if self._state in [DagRunState.FAILED, DagRunState.SUCCESS]:
             msg = (
                 "DagRun Finished: dag_id=%s, execution_date=%s, run_id=%s, "
                 "run_start_date=%s, run_end_date=%s, run_duration=%s, "
@@ -692,10 +690,8 @@ class DagRun(Base, LoggingMixin):
         finished_tasks: List[TI],
         session: Session,
     ) -> bool:
-        # there might be runnable tasks that are up for retry and for some reason(retry delay, etc) are
-        # not ready yet so we set the flags to count them in
-        for ut in unfinished_tasks:
-            if ut.are_dependencies_met(
+        return any(
+            ut.are_dependencies_met(
                 dep_context=DepContext(
                     flag_upstream_failed=True,
                     ignore_in_retry_period=True,
@@ -703,9 +699,9 @@ class DagRun(Base, LoggingMixin):
                     finished_tasks=finished_tasks,
                 ),
                 session=session,
-            ):
-                return True
-        return False
+            )
+            for ut in unfinished_tasks
+        )
 
     def _emit_true_scheduling_delay_stats_for_finished_state(self, finished_tis):
         """
@@ -737,8 +733,7 @@ class DagRun(Base, LoggingMixin):
 
             ordered_tis_by_start_date = [ti for ti in finished_tis if ti.start_date]
             ordered_tis_by_start_date.sort(key=lambda ti: ti.start_date, reverse=False)
-            first_start_date = ordered_tis_by_start_date[0].start_date
-            if first_start_date:
+            if first_start_date := ordered_tis_by_start_date[0].start_date:
                 # TODO: Logically, this should be DagRunInfo.run_after, but the
                 # information is not stored on a DagRun, only before the actual
                 # execution on DagModel.next_dagrun_create_after. We should add

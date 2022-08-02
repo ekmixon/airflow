@@ -86,10 +86,7 @@ def dag_backfill(args, dag=None):
                 f"There are no tasks that match '{args.task_regex}' regex. Nothing to run, exiting..."
             )
 
-    run_conf = None
-    if args.conf:
-        run_conf = json.loads(args.conf)
-
+    run_conf = json.loads(args.conf) if args.conf else None
     if args.dry_run:
         print(f"Dry run of DAG {args.dag_id} on {args.start_date}")
         dr = DagRun(dag.dag_id, execution_date=args.start_date)
@@ -126,7 +123,7 @@ def dag_backfill(args, dag=None):
                 run_backwards=args.run_backwards,
             )
         except ValueError as vr:
-            print(str(vr))
+            print(vr)
             sys.exit(1)
 
 
@@ -263,9 +260,7 @@ def dag_state(args):
         dag = get_dag_by_file_location(args.dag_id)
     dr = DagRun.find(dag.dag_id, execution_date=args.execution_date)
     out = dr[0].state if dr else None
-    conf_out = ''
-    if out and dr[0].conf:
-        conf_out = ', ' + json.dumps(dr[0].conf)
+    conf_out = f', {json.dumps(dr[0].conf)}' if out and dr[0].conf else ''
     print(str(out) + conf_out)
 
 
@@ -438,7 +433,7 @@ def dag_test(args, session=None):
             run_at_least_once=True,
         )
     except BackfillUnfinished as e:
-        print(str(e))
+        print(e)
 
     show_dagrun = args.show_dagrun
     imgcat = args.imgcat_dagrun
@@ -455,12 +450,12 @@ def dag_test(args, session=None):
 
         dot_graph = render_dag(dag, tis=tis)
         print()
-        if filename:
-            _save_dot_to_file(dot_graph, filename)
-        if imgcat:
-            _display_dot_via_imgcat(dot_graph)
-        if show_dagrun:
-            print(dot_graph.source)
+    if filename:
+        _save_dot_to_file(dot_graph, filename)
+    if imgcat:
+        _display_dot_via_imgcat(dot_graph)
+    if show_dagrun:
+        print(dot_graph.source)
 
 
 @provide_session

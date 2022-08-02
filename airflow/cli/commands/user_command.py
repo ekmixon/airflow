@@ -63,8 +63,14 @@ def users_create(args):
     if appbuilder.sm.find_user(args.username):
         print(f'{args.username} already exist in the db')
         return
-    user = appbuilder.sm.add_user(args.username, args.firstname, args.lastname, args.email, role, password)
-    if user:
+    if user := appbuilder.sm.add_user(
+        args.username,
+        args.firstname,
+        args.lastname,
+        args.email,
+        role,
+        password,
+    ):
         print(f'User "{args.username}" created with role "{args.role}"')
     else:
         raise SystemExit('Failed to create user')
@@ -79,10 +85,12 @@ def _find_user(args):
 
     appbuilder = cached_app().appbuilder
 
-    user = appbuilder.sm.find_user(username=args.username, email=args.email)
-    if not user:
+    if user := appbuilder.sm.find_user(
+        username=args.username, email=args.email
+    ):
+        return user
+    else:
         raise SystemExit(f'User "{args.username or args.email}" does not exist')
-    return user
 
 
 @cli_utils.action_cli
@@ -179,6 +187,7 @@ def _import_users(users_list):
     users_created = []
     users_updated = []
 
+    required_fields = ['username', 'firstname', 'lastname', 'email', 'roles']
     for user in users_list:
         roles = []
         for rolename in user['roles']:
@@ -189,13 +198,11 @@ def _import_users(users_list):
 
             roles.append(role)
 
-        required_fields = ['username', 'firstname', 'lastname', 'email', 'roles']
         for field in required_fields:
             if not user.get(field):
                 raise SystemExit(f"Error: '{field}' is a required field, but was not specified")
 
-        existing_user = appbuilder.sm.find_user(email=user['email'])
-        if existing_user:
+        if existing_user := appbuilder.sm.find_user(email=user['email']):
             print(f"Found existing user with email '{user['email']}'")
             if existing_user.username != user['username']:
                 raise SystemExit(

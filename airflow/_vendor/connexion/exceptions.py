@@ -46,10 +46,10 @@ class ResolverError(LookupError):
         self.exc_info = exc_info
 
     def __str__(self):  # pragma: no cover
-        return '<ResolverError: {}>'.format(self.reason)
+        return f'<ResolverError: {self.reason}>'
 
     def __repr__(self):  # pragma: no cover
-        return '<ResolverError: {}>'.format(self.reason)
+        return f'<ResolverError: {self.reason}>'
 
 
 class InvalidSpecification(ConnexionException, ValidationError):
@@ -67,10 +67,10 @@ class NonConformingResponse(ProblemException):
         self.message = message
 
     def __str__(self):  # pragma: no cover
-        return '<NonConformingResponse: {}>'.format(self.reason)
+        return f'<NonConformingResponse: {self.reason}>'
 
     def __repr__(self):  # pragma: no cover
-        return '<NonConformingResponse: {}>'.format(self.reason)
+        return f'<NonConformingResponse: {self.reason}>'
 
 
 class AuthenticationProblem(ProblemException):

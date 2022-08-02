@@ -35,7 +35,7 @@ class AirflowConsole(Console):
     def __init__(self, show_header: bool = True, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Set the width to constant to pipe whole output from console
-        self._width = 200 if not is_tty() else self._width
+        self._width = self._width if is_tty() else 200
 
         # If show header in tables
         self.show_header = show_header
@@ -77,14 +77,13 @@ class AirflowConsole(Console):
         if isinstance(value, (tuple, list)):
             if output == "table":
                 return ",".join(str(self._normalize_data(x, output)) for x in value)
-            return [self._normalize_data(x, output) for x in value]
+            else:
+                return [self._normalize_data(x, output) for x in value]
         if isinstance(value, dict) and output != "table":
             return {k: self._normalize_data(v, output) for k, v in value.items()}
         if inspect.isclass(value) and not isinstance(value, PluginsDirectorySource):
             return value.__name__
-        if value is None:
-            return None
-        return str(value)
+        return None if value is None else str(value)
 
     def print_as(self, data: List[Union[Dict, Any]], output: str, mapper: Optional[Callable] = None):
         """Prints provided using format specified by output argument"""
@@ -103,10 +102,7 @@ class AirflowConsole(Console):
         if not all(isinstance(d, dict) for d in data) and not mapper:
             raise ValueError("To tabulate non-dictionary data you need to provide `mapper` function")
 
-        if mapper:
-            dict_data: List[Dict] = [mapper(d) for d in data]
-        else:
-            dict_data = data
+        dict_data = [mapper(d) for d in data] if mapper else data
         dict_data = [{k: self._normalize_data(v, output) for k, v in d.items()} for d in dict_data]
         renderer(dict_data)
 

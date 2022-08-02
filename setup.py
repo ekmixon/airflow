@@ -52,8 +52,7 @@ my_dir = dirname(__file__)
 def airflow_test_suite() -> unittest.TestSuite:
     """Test suite for Airflow tests"""
     test_loader = unittest.TestLoader()
-    test_suite = test_loader.discover(os.path.join(my_dir, 'tests'), pattern='test_*.py')
-    return test_suite
+    return test_loader.discover(os.path.join(my_dir, 'tests'), pattern='test_*.py')
 
 
 class CleanCommand(Command):
@@ -833,12 +832,7 @@ EXTRAS_REQUIREMENTS["all_dbs"] = all_dbs + pandas
 devel_all = list(set(_all_requirements + doc + devel + devel_hadoop))
 
 # Those are packages excluded for "all" dependencies
-PACKAGES_EXCLUDED_FOR_ALL = []
-PACKAGES_EXCLUDED_FOR_ALL.extend(
-    [
-        'snakebite',
-    ]
-)
+PACKAGES_EXCLUDED_FOR_ALL = ['snakebite']
 
 
 def is_package_excluded(package: str, exclusion_list: List[str]) -> bool:
@@ -1086,7 +1080,7 @@ def do_setup() -> None:
         distclass=AirflowDistribution,
         version=version,
         extras_require=EXTRAS_REQUIREMENTS,
-        download_url=('https://archive.apache.org/dist/airflow/' + version),
+        download_url=f'https://archive.apache.org/dist/airflow/{version}',
         cmdclass={
             'extra_clean': CleanCommand,
             'compile_assets': CompileAssets,
@@ -1095,7 +1089,7 @@ def do_setup() -> None:
             'develop': Develop,
         },
         test_suite='setup.airflow_test_suite',
-        **setup_kwargs,  # type: ignore
+        **setup_kwargs,
     )
 
 

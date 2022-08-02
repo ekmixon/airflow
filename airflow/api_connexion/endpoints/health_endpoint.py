@@ -29,9 +29,7 @@ def get_health() -> APIResponse:
     latest_scheduler_heartbeat = None
     scheduler_status = UNHEALTHY
     try:
-        scheduler_job = SchedulerJob.most_recent_job()
-
-        if scheduler_job:
+        if scheduler_job := SchedulerJob.most_recent_job():
             latest_scheduler_heartbeat = scheduler_job.latest_heartbeat.isoformat()
             if scheduler_job.is_alive():
                 scheduler_status = HEALTHY

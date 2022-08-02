@@ -173,11 +173,14 @@ class DagCode(Base):
     @classmethod
     @provide_session
     def _get_code_from_db(cls, fileloc, session=None):
-        dag_code = session.query(cls).filter(cls.fileloc_hash == cls.dag_fileloc_hash(fileloc)).first()
-        if not dag_code:
-            raise DagCodeNotFound()
-        else:
+        if (
+            dag_code := session.query(cls)
+            .filter(cls.fileloc_hash == cls.dag_fileloc_hash(fileloc))
+            .first()
+        ):
             code = dag_code.source_code
+        else:
+            raise DagCodeNotFound()
         return code
 
     @staticmethod

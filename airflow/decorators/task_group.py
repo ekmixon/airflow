@@ -98,6 +98,4 @@ def task_group(python_callable=None, *tg_args, **tg_kwargs):
 
         return factory
 
-    if callable(python_callable):
-        return wrapper(python_callable)
-    return wrapper
+    return wrapper(python_callable) if callable(python_callable) else wrapper

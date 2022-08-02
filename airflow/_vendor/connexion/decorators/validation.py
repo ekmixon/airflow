@@ -57,7 +57,7 @@ def coerce_type(param, value, parameter_type, parameter_name=None):
         return None
 
     param_type = param_schema.get('type')
-    parameter_name = parameter_name if parameter_name else param.get('name')
+    parameter_name = parameter_name or param.get('name')
     if param_type == "array":
         converted_params = []
         for v in value:
@@ -282,7 +282,7 @@ class ParameterValidator(object):
                         param, format_checker=draft4_format_checker).validate(converted_value)
             except ValidationError as exception:
                 debug_msg = 'Error while converting value {converted_value} from param ' \
-                            '{type_converted_value} of type real type {param_type} to the declared type {param}'
+                                '{type_converted_value} of type real type {param_type} to the declared type {param}'
                 fmt_params = dict(
                     converted_value=str(converted_value),
                     type_converted_value=type(converted_value),

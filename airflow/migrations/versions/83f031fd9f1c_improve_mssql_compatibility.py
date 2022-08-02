@@ -177,9 +177,8 @@ def upgrade():
         )
     constraint_dict = get_table_constraints(conn, 'dag_run')
     for constraint, columns in constraint_dict.items():
-        if 'dag_id' in columns:
-            if constraint[1].lower().startswith("unique"):
-                op.drop_constraint(constraint[0], 'dag_run', type_='unique')
+        if 'dag_id' in columns and constraint[1].lower().startswith("unique"):
+            op.drop_constraint(constraint[0], 'dag_run', type_='unique')
     # create filtered indexes
     conn.execute(
         """CREATE UNIQUE NONCLUSTERED INDEX idx_not_null_dag_id_execution_date

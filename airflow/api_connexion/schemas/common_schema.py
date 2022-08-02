@@ -161,6 +161,4 @@ class ClassReferenceSchema(Schema):
     def _get_class_name(self, obj):
         if isinstance(obj, SerializedBaseOperator):
             return obj._task_type
-        if isinstance(obj, type):
-            return obj.__name__
-        return type(obj).__name__
+        return obj.__name__ if isinstance(obj, type) else type(obj).__name__

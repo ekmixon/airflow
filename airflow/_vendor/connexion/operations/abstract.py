@@ -99,7 +99,7 @@ class AbstractOperation(SecureOperation, metaclass=abc.ABCMeta):
         self._responses = self._operation.get("responses", {})
 
         self._validator_map = dict(VALIDATOR_MAP)
-        self._validator_map.update(validator_map or {})
+        self._validator_map |= (validator_map or {})
 
     @property
     def method(self):
@@ -194,10 +194,10 @@ class AbstractOperation(SecureOperation, metaclass=abc.ABCMeta):
                 try:
                     query_defn = query_defns[key]
                 except KeyError:  # pragma: no cover
-                    logger.error("Function argument '{}' not defined in specification".format(key))
+                    logger.error(f"Function argument '{key}' not defined in specification")
                 else:
                     logger.debug('%s is a %s', key, query_defn)
-                    res.update({key: self._get_val_from_param(value, query_defn)})
+                    res[key] = self._get_val_from_param(value, query_defn)
         return res
 
     @abc.abstractmethod
@@ -263,7 +263,7 @@ class AbstractOperation(SecureOperation, metaclass=abc.ABCMeta):
         get arguments for handler function
         """
         ret = {}
-        ret.update(self._get_path_arguments(path_params, sanitize))
+        ret |= self._get_path_arguments(path_params, sanitize)
         ret.update(self._get_query_arguments(query_params, arguments,
                                              has_kwargs, sanitize))
 
@@ -279,11 +279,9 @@ class AbstractOperation(SecureOperation, metaclass=abc.ABCMeta):
         response definition for this endpoint
         """
         content_type = content_type or self.get_mimetype()
-        response_definition = self.responses.get(
-            str(status_code),
-            self.responses.get("default", {})
+        return self.responses.get(
+            str(status_code), self.responses.get("default", {})
         )
-        return response_definition
 
     @abc.abstractmethod
     def response_schema(self, status_code=None, content_type=None):
@@ -404,8 +402,7 @@ class AbstractOperation(SecureOperation, metaclass=abc.ABCMeta):
 
         elif len(self.produces) == 1:
             logger.debug('... Produces %s', mimetype, extra=vars(self))
-            decorator = Produces(mimetype)
-            return decorator
+            return Produces(mimetype)
 
         else:
             return BaseSerializer()

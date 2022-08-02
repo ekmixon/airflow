@@ -210,9 +210,7 @@ class PodLauncher(LoggingMixin):
         """Tests if base container is running"""
         event = self.read_pod(pod)
         status = next(iter(filter(lambda s: s.name == 'base', event.status.container_statuses)), None)
-        if not status:
-            return False
-        return status.state.running is not None
+        return status.state.running is not None if status else False
 
     @tenacity.retry(stop=tenacity.stop_after_attempt(3), wait=tenacity.wait_exponential(), reraise=True)
     def read_pod_logs(

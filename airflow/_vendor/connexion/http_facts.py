@@ -3,13 +3,4 @@ FORM_CONTENT_TYPES = [
     'multipart/form-data'
 ]
 
-METHODS = set([
-    "get",
-    "put",
-    "post",
-    "delete",
-    "options",
-    "head",
-    "patch",
-    "trace"
-])
+METHODS = {"get", "put", "post", "delete", "options", "head", "patch", "trace"}

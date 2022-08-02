@@ -102,8 +102,9 @@ if conf.getboolean("sentry", 'sentry_on', fallback=False):
                 # supported backward compatibility with old way dsn option
                 dsn = old_way_dsn or new_way_dsn
 
-                unsupported_options = self.UNSUPPORTED_SENTRY_OPTIONS.intersection(sentry_config_opts.keys())
-                if unsupported_options:
+                if unsupported_options := self.UNSUPPORTED_SENTRY_OPTIONS.intersection(
+                    sentry_config_opts.keys()
+                ):
                     log.warning(
                         "There are unsupported options in [sentry] section: %s",
                         ", ".join(unsupported_options),
@@ -144,10 +145,7 @@ if conf.getboolean("sentry", 'sentry_on', fallback=False):
             )
 
             for ti in task_instances:
-                data = {}
-                for crumb_tag in self.SCOPE_CRUMBS:
-                    data[crumb_tag] = getattr(ti, crumb_tag)
-
+                data = {crumb_tag: getattr(ti, crumb_tag) for crumb_tag in self.SCOPE_CRUMBS}
                 sentry_sdk.add_breadcrumb(category="completed_tasks", data=data, level="info")
 
         def enrich_errors(self, func):

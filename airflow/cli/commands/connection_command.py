@@ -84,14 +84,10 @@ def connections_list(args):
 
 def _format_connections(conns: List[Connection], fmt: str) -> str:
     if fmt == '.env':
-        connections_env = ""
-        for conn in conns:
-            connections_env += f"{conn.conn_id}={conn.get_uri()}\n"
-        return connections_env
+        return "".join(f"{conn.conn_id}={conn.get_uri()}\n" for conn in conns)
 
-    connections_dict = {}
-    for conn in conns:
-        connections_dict[conn.conn_id] = {
+    connections_dict = {
+        conn.conn_id: {
             'conn_type': conn.conn_type,
             'description': conn.description,
             'host': conn.host,
@@ -101,6 +97,8 @@ def _format_connections(conns: List[Connection], fmt: str) -> str:
             'port': conn.port,
             'extra': conn.extra,
         }
+        for conn in conns
+    }
 
     if fmt == '.yaml':
         return yaml.dump(connections_dict)
@@ -163,9 +161,12 @@ def connections_add(args):
     if args.conn_uri:
         if not _valid_uri(args.conn_uri):
             raise SystemExit(f'The URI provided to --conn-uri is invalid: {args.conn_uri}')
-        for arg in alternative_conn_specs:
-            if getattr(args, arg) is not None:
-                invalid_args.append(arg)
+        invalid_args.extend(
+            arg
+            for arg in alternative_conn_specs
+            if getattr(args, arg) is not None
+        )
+
     elif not args.conn_type:
         missing_args.append('conn-uri or conn-type')
     if missing_args:

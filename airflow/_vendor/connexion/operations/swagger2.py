@@ -254,7 +254,7 @@ class Swagger2Operation(AbstractOperation):
                                 for k, v in query_defns.items()
                                 if 'default' in v}
         query_arguments = deepcopy(default_query_params)
-        query_arguments.update(query)
+        query_arguments |= query
         return self._query_args_helper(query_defns, query_arguments,
                                        arguments, has_kwargs, sanitize)
 
@@ -284,7 +284,7 @@ class Swagger2Operation(AbstractOperation):
         # Add formData parameters
         form_arguments = deepcopy(default_form_params)
         if form_defns and body:
-            form_arguments.update(body)
+            form_arguments |= body
         for key, value in form_arguments.items():
             if not has_kwargs and key not in arguments:
                 logger.debug("FormData parameter '%s' not in function arguments", key)
@@ -293,7 +293,7 @@ class Swagger2Operation(AbstractOperation):
                 try:
                     form_defn = form_defns[key]
                 except KeyError:  # pragma: no cover
-                    logger.error("Function argument '{}' not defined in specification".format(key))
+                    logger.error(f"Function argument '{key}' not defined in specification")
                 else:
                     kwargs[key] = self._get_val_from_param(value, form_defn)
         return kwargs
@@ -305,6 +305,6 @@ class Swagger2Operation(AbstractOperation):
         query_schema = query_defn
 
         if query_schema["type"] == "array":
-            return [make_type(part, query_defn["items"]["type"]) for part in value]
+            return [make_type(part, query_schema["items"]["type"]) for part in value]
         else:
-            return make_type(value, query_defn["type"])
+            return make_type(value, query_schema["type"])

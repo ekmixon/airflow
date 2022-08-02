@@ -287,7 +287,6 @@ class LocalTaskJob(BaseJob):
         """
         dag = self.task_instance.task.dag
         if dag.get_is_paused():
-            dag_run = self.task_instance.get_dagrun(session=session)
-            if dag_run:
+            if dag_run := self.task_instance.get_dagrun(session=session):
                 dag_run.dag = dag
                 dag_run.update_state(session=session, execute_callbacks=True)

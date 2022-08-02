@@ -43,8 +43,7 @@ def common_error_handler(exception: BaseException) -> flask.Response:
     """
     if isinstance(exception, ProblemException):
 
-        link = EXCEPTIONS_LINK_MAP.get(exception.status)
-        if link:
+        if link := EXCEPTIONS_LINK_MAP.get(exception.status):
             response = problem(
                 status=exception.status,
                 title=exception.title,

@@ -30,12 +30,11 @@ from airflow.utils.cli import process_subdir, setup_locations, setup_logging, si
 
 
 def _create_scheduler_job(args):
-    job = SchedulerJob(
+    return SchedulerJob(
         subdir=process_subdir(args.subdir),
         num_runs=args.num_runs,
         do_pickle=args.do_pickle,
     )
-    return job
 
 
 def _run_scheduler_job(args):
@@ -80,9 +79,11 @@ def _serve_logs(skip_serve_logs: bool = False) -> Optional[Process]:
     from airflow.configuration import conf
     from airflow.utils.serve_logs import serve_logs
 
-    if conf.get("core", "executor") in ["LocalExecutor", "SequentialExecutor"]:
-        if skip_serve_logs is False:
-            sub_proc = Process(target=serve_logs)
-            sub_proc.start()
-            return sub_proc
+    if (
+        conf.get("core", "executor") in ["LocalExecutor", "SequentialExecutor"]
+        and not skip_serve_logs
+    ):
+        sub_proc = Process(target=serve_logs)
+        sub_proc.start()
+        return sub_proc
     return None

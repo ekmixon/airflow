@@ -60,8 +60,12 @@ def generate_pod_yaml(args):
         api_client = ApiClient()
         date_string = pod_generator.datetime_to_label_safe_datestring(execution_date)
         yaml_file_name = f"{args.dag_id}_{ti.task_id}_{date_string}.yml"
-        os.makedirs(os.path.dirname(yaml_output_path + "/airflow_yaml_output/"), exist_ok=True)
-        with open(yaml_output_path + "/airflow_yaml_output/" + yaml_file_name, "w") as output:
+        os.makedirs(
+            os.path.dirname(f"{yaml_output_path}/airflow_yaml_output/"),
+            exist_ok=True,
+        )
+
+        with open(f"{yaml_output_path}/airflow_yaml_output/{yaml_file_name}", "w") as output:
             sanitized_pod = api_client.sanitize_for_serialization(pod)
             output.write(yaml.dump(sanitized_pod))
     print(f"YAML output can be found at {yaml_output_path}/airflow_yaml_output/")
@@ -124,10 +128,10 @@ def cleanup_pods(args):
                     print(f"Can't remove POD: {e}", file=sys.stderr)
                 continue
             print(f'No action taken on pod {pod_name}')
-        continue_token = pod_list.metadata._continue
-        if not continue_token:
+        if continue_token := pod_list.metadata._continue:
+            list_kwargs["_continue"] = continue_token
+        else:
             break
-        list_kwargs["_continue"] = continue_token
 
 
 def _delete_pod(name, namespace):

@@ -78,4 +78,4 @@ def is_flask_response(obj):
     >>> is_flask_response(flask.Response())
     True
     """
-    return isinstance(obj, flask.Response) or isinstance(obj, werkzeug.wrappers.Response)
+    return isinstance(obj, (flask.Response, werkzeug.wrappers.Response))

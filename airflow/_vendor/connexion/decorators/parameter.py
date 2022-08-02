@@ -48,9 +48,7 @@ def snake_and_shadow(name):
     :return:
     """
     snake = inflection.underscore(name)
-    if snake in builtins.__dict__.keys():
-        return "{}_".format(snake)
-    return snake
+    return f"{snake}_" if snake in builtins.__dict__.keys() else snake
 
 
 def parameter_to_arg(operation, function, pythonic_params=False,

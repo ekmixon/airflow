@@ -100,7 +100,6 @@ class SecureOperation(object):
 
                 auth_funcs.append(verify_oauth(token_info_func, scope_validate_func))
 
-            # Swagger 2.0
             elif security_scheme['type'] == 'basic':
                 basic_info_func = get_basicinfo_func(security_scheme)
                 if not basic_info_func:
@@ -109,7 +108,6 @@ class SecureOperation(object):
 
                 auth_funcs.append(verify_basic(basic_info_func))
 
-            # OpenAPI 3.0.0
             elif security_scheme['type'] == 'http':
                 scheme = security_scheme['scheme'].lower()
                 if scheme == 'basic':
@@ -126,7 +124,11 @@ class SecureOperation(object):
                         continue
                     auth_funcs.append(verify_bearer(bearer_info_func))
                 else:
-                    logger.warning("... Unsupported http authorization scheme %s" % scheme, extra=vars(self))
+                    logger.warning(
+                        f"... Unsupported http authorization scheme {scheme}",
+                        extra=vars(self),
+                    )
+
 
             elif security_scheme['type'] == 'apiKey':
                 scheme = security_scheme.get('x-authentication-scheme', '').lower()
@@ -145,7 +147,11 @@ class SecureOperation(object):
                     auth_funcs.append(verify_apikey(apikey_info_func, security_scheme['in'], security_scheme['name']))
 
             else:
-                logger.warning("... Unsupported security scheme type %s" % security_scheme['type'], extra=vars(self))
+                logger.warning(
+                    f"... Unsupported security scheme type {security_scheme['type']}",
+                    extra=vars(self),
+                )
+
 
         return functools.partial(verify_security, auth_funcs, required_scopes)
 

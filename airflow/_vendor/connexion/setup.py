@@ -42,12 +42,11 @@ tests_require = [
     'pytest-cov',
     'testfixtures',
     flask_require,
-    swagger_ui_require
+    swagger_ui_require,
+    *aiohttp_require,
+    'pytest-aiohttp',
+    'aiohttp-remotes',
 ]
-
-tests_require.extend(aiohttp_require)
-tests_require.append('pytest-aiohttp')
-tests_require.append('aiohttp-remotes')
 
 
 class PyTest(TestCommand):

@@ -224,7 +224,7 @@ class AirflowFileParseException(AirflowException):
             result += f"{parse_error.message}\n"
             if parse_error.line_no:
                 result += f"Line number:  {parse_error.line_no}\n"
-                if parse_error.line_no and is_tty():
+                if is_tty():
                     result += "\n" + prepare_code_snippet(self.file_path, parse_error.line_no) + "\n"
 
         return result

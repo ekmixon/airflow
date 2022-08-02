@@ -158,7 +158,7 @@ class OpenAPIURIParser(AbstractURIParser):
 
     @property
     def form_defns(self):
-        return {k: v for k, v in self._body_schema.get('properties', {}).items()}
+        return dict(self._body_schema.get('properties', {}).items())
 
     @property
     def param_schemas(self):
@@ -204,10 +204,7 @@ class OpenAPIURIParser(AbstractURIParser):
         root_keys = [k for k, v, is_deep_object in deep]
         ret = dict.fromkeys(root_keys, [{}])
         for k, v, is_deep_object in deep:
-            if is_deep_object:
-                ret[k] = [utils.deep_merge(v[0], ret[k][0])]
-            else:
-                ret[k] = v
+            ret[k] = [utils.deep_merge(v[0], ret[k][0])] if is_deep_object else v
         return ret
 
     def resolve_query(self, query_data):
@@ -230,8 +227,7 @@ class OpenAPIURIParser(AbstractURIParser):
         style = param_defn.get('style', default_style)
         delimiter = QUERY_STRING_DELIMITERS.get(style, ',')
         is_form = (style == 'form')
-        explode = param_defn.get('explode', is_form)
-        if explode:
+        if explode := param_defn.get('explode', is_form):
             return delimiter.join(values)
 
         # default to last defined value

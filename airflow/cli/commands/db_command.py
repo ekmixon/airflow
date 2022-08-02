@@ -27,14 +27,14 @@ from airflow.utils.process_utils import execute_interactive
 
 def initdb(args):
     """Initializes the metadata database"""
-    print("DB: " + repr(settings.engine.url))
+    print(f"DB: {repr(settings.engine.url)}")
     db.initdb()
     print("Initialization done")
 
 
 def resetdb(args):
     """Resets the metadata database"""
-    print("DB: " + repr(settings.engine.url))
+    print(f"DB: {repr(settings.engine.url)}")
     if args.yes or input("This will drop existing tables if they exist. Proceed? (y/n)").upper() == "Y":
         db.resetdb()
     else:
@@ -44,7 +44,7 @@ def resetdb(args):
 @cli_utils.action_cli(check_db=False)
 def upgradedb(args):
     """Upgrades the metadata database"""
-    print("DB: " + repr(settings.engine.url))
+    print(f"DB: {repr(settings.engine.url)}")
     db.upgradedb()
     print("Upgrades done")
 
@@ -58,7 +58,7 @@ def check_migrations(args):
 def shell(args):
     """Run a shell that allows to access metadata database"""
     url = settings.engine.url
-    print("DB: " + repr(url))
+    print(f"DB: {repr(url)}")
 
     if url.get_backend_name() == 'mysql':
         with NamedTemporaryFile(suffix="my.cnf") as f:

@@ -49,7 +49,7 @@ class Resolver(object):
         router_controller = operation.router_controller
         if operation.router_controller is None:
             return operation_id
-        return '{}.{}'.format(router_controller, operation_id)
+        return f'{router_controller}.{operation_id}'
 
     def resolve_function_from_operation_id(self, operation_id):
         """
@@ -60,7 +60,8 @@ class Resolver(object):
         try:
             return self.function_resolver(operation_id)
         except ImportError as e:
-            msg = 'Cannot resolve operationId "{}"! Import error was "{}"'.format(operation_id, str(e))
+            msg = f'Cannot resolve operationId "{operation_id}"! Import error was "{str(e)}"'
+
             raise ResolverError(msg, sys.exc_info())
         except (AttributeError, ValueError) as e:
             raise ResolverError(str(e), sys.exc_info())
@@ -105,24 +106,26 @@ class RestyResolver(Resolver):
             x_router_controller = operation.router_controller
 
             name = self.default_module_name
-            resource_name = path_match.group('resource_name')
+            resource_name = path_match['resource_name']
 
             if x_router_controller:
                 name = x_router_controller
 
             elif resource_name:
                 resource_controller_name = resource_name.replace('-', '_')
-                name += '.' + resource_controller_name
+                name += f'.{resource_controller_name}'
 
             return name
 
         def get_function_name():
             method = operation.method
 
-            is_collection_endpoint = \
-                method.lower() == 'get' \
-                and path_match.group('resource_name') \
-                and not path_match.group('extended_path')
+            is_collection_endpoint = (
+                method.lower() == 'get'
+                and path_match['resource_name']
+                and not path_match['extended_path']
+            )
+
 
             return self.collection_endpoint_name if is_collection_endpoint else method.lower()
 
@@ -162,7 +165,7 @@ class MethodViewResolver(RestyResolver):
         module_name, view_base, meth_name = operation_id.rsplit('.', 2)
         view_name = view_base[0].upper() + view_base[1:] + 'View'
 
-        return "{}.{}.{}".format(module_name, view_name, meth_name)
+        return f"{module_name}.{view_name}.{meth_name}"
 
     def resolve_function_from_operation_id(self, operation_id):
         """
@@ -181,12 +184,11 @@ class MethodViewResolver(RestyResolver):
             view_cls = getattr(mod, view_name)
             # Find the class and instantiate it
             view = view_cls()
-            func = getattr(view, meth_name)
             # Return the method function of the class
-            return func
+            return getattr(view, meth_name)
         except ImportError as e:
-            msg = 'Cannot resolve operationId "{}"! Import error was "{}"'.format(
-                operation_id, str(e))
+            msg = f'Cannot resolve operationId "{operation_id}"! Import error was "{str(e)}"'
+
             raise ResolverError(msg, sys.exc_info())
         except (AttributeError, ValueError) as e:
             raise ResolverError(str(e), sys.exc_info())

@@ -108,13 +108,12 @@ def patch_dag(*, dag_id: str, update_mask: UpdateMask = None, session: Session =
     except ValidationError as err:
         raise BadRequest("Invalid Dag schema", detail=str(err.messages))
     if update_mask:
-        patch_body_ = {}
         if len(update_mask) > 1:
             raise BadRequest(detail="Only `is_paused` field can be updated through the REST API")
         update_mask = update_mask[0]
         if update_mask != 'is_paused':
             raise BadRequest(detail="Only `is_paused` field can be updated through the REST API")
-        patch_body_[update_mask] = patch_body[update_mask]
+        patch_body_ = {update_mask: patch_body[update_mask]}
         patch_body = patch_body_
     setattr(dag, 'is_paused', patch_body['is_paused'])
     session.commit()

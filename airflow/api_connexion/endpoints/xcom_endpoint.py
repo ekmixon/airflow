@@ -55,11 +55,9 @@ def get_xcom_entries(
         appbuilder = current_app.appbuilder
         readable_dag_ids = appbuilder.sm.get_readable_dag_ids(g.user)
         query = query.filter(XCom.dag_id.in_(readable_dag_ids))
-        query = query.join(DR, and_(XCom.dag_id == DR.dag_id, XCom.execution_date == DR.execution_date))
     else:
         query = query.filter(XCom.dag_id == dag_id)
-        query = query.join(DR, and_(XCom.dag_id == DR.dag_id, XCom.execution_date == DR.execution_date))
-
+    query = query.join(DR, and_(XCom.dag_id == DR.dag_id, XCom.execution_date == DR.execution_date))
     if task_id != '~':
         query = query.filter(XCom.task_id == task_id)
     if dag_run_id != '~':
@@ -92,7 +90,7 @@ def get_xcom_entry(
     query = query.join(DR, and_(XCom.dag_id == DR.dag_id, XCom.execution_date == DR.execution_date))
     query = query.filter(DR.run_id == dag_run_id)
 
-    query_object = query.one_or_none()
-    if not query_object:
+    if query_object := query.one_or_none():
+        return xcom_schema.dump(query_object)
+    else:
         raise NotFound("XCom entry not found")
-    return xcom_schema.dump(query_object)

@@ -120,8 +120,8 @@ class OpenAPIOperation(AbstractOperation):
         request_content = self._request_body.get('content', {})
         self._consumes = list(request_content.keys()) or ['application/json']
 
-        logger.debug('consumes: %s' % self.consumes)
-        logger.debug('produces: %s' % self.produces)
+        logger.debug(f'consumes: {self.consumes}')
+        logger.debug(f'produces: {self.produces}')
 
     @classmethod
     def from_spec(cls, spec, api, path, method, resolver, *args, **kwargs):
@@ -284,20 +284,15 @@ class OpenAPIOperation(AbstractOperation):
             body = deepcopy(default_body)
 
         if self.body_schema.get("type") != "object":
-            if x_body_name in arguments or has_kwargs:
-                return {x_body_name: body}
-            return {}
-
+            return {x_body_name: body} if x_body_name in arguments or has_kwargs else {}
         body_arg = deepcopy(default_body)
         body_arg.update(body or {})
 
-        res = {}
         if body_props or additional_props:
             res = self._get_typed_body_values(body_arg, body_props, additional_props)
-
-        if x_body_name in arguments or has_kwargs:
-            return {x_body_name: res}
-        return {}
+        else:
+            res = {}
+        return {x_body_name: res} if x_body_name in arguments or has_kwargs else {}
 
     def _get_typed_body_values(self, body_arg, body_props, additional_props):
         """
@@ -319,7 +314,7 @@ class OpenAPIOperation(AbstractOperation):
                 res[key] = self._get_val_from_param(value, prop_defn)
             except KeyError:  # pragma: no cover
                 if not additional_props:
-                    logger.error("Body property '{}' not defined in body schema".format(key))
+                    logger.error(f"Body property '{key}' not defined in body schema")
                     continue
                 if additional_props_defn is not None:
                     value = self._get_val_from_param(value, additional_props_defn)

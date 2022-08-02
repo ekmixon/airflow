@@ -77,15 +77,14 @@ def get_fernet():
         return _fernet
 
     try:
-        fernet_key = conf.get('core', 'FERNET_KEY')
-        if not fernet_key:
-            log.warning("empty cryptography key - values will not be stored encrypted.")
-            _fernet = NullFernet()
-        else:
+        if fernet_key := conf.get('core', 'FERNET_KEY'):
             _fernet = MultiFernet(
                 [Fernet(fernet_part.encode('utf-8')) for fernet_part in fernet_key.split(',')]
             )
             _fernet.is_encrypted = True
+        else:
+            log.warning("empty cryptography key - values will not be stored encrypted.")
+            _fernet = NullFernet()
     except (ValueError, TypeError) as value_error:
         raise AirflowException(f"Could not create Fernet object: {value_error}")
 

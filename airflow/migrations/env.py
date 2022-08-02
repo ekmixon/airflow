@@ -26,10 +26,7 @@ from airflow import models, settings
 def include_object(_, name, type_, *args):
     """Filter objects for autogenerating revisions"""
     # Ignore _anything_ to do with Flask AppBuilder's tables
-    if type_ == "table" and name.startswith("ab_"):
-        return False
-    else:
-        return True
+    return type_ != "table" or not name.startswith("ab_")
 
 
 # this is the Alembic Config object, which provides

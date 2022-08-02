@@ -290,10 +290,11 @@ class DagBag(LoggingMixin):
             self.log.exception(e)
             return []
 
-        if not zipfile.is_zipfile(filepath):
-            mods = self._load_modules_from_file(filepath, safe_mode)
-        else:
-            mods = self._load_modules_from_zip(filepath, safe_mode)
+        mods = (
+            self._load_modules_from_zip(filepath, safe_mode)
+            if zipfile.is_zipfile(filepath)
+            else self._load_modules_from_file(filepath, safe_mode)
+        )
 
         found_dags = self._process_modules(filepath, mods, file_last_changed_on_disk)
 
@@ -556,7 +557,7 @@ class DagBag(LoggingMixin):
         task_num = sum(o.task_num for o in stats)
         table = tabulate(stats, headers="keys")
 
-        report = textwrap.dedent(
+        return textwrap.dedent(
             f"""\n
         -------------------------------------------------------------------
         DagBag loading stats for {dag_folder}
@@ -567,7 +568,6 @@ class DagBag(LoggingMixin):
         {table}
         """
         )
-        return report
 
     @provide_session
     def sync_to_db(self, session: Session = None):

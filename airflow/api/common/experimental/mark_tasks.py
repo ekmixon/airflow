@@ -136,17 +136,19 @@ def set_state(
 
 def all_subdag_tasks_query(sub_dag_run_ids, session, state, confirmed_dates):
     """Get *all* tasks of the sub dags"""
-    qry_sub_dag = (
+    return (
         session.query(TaskInstance)
-        .filter(TaskInstance.dag_id.in_(sub_dag_run_ids), TaskInstance.execution_date.in_(confirmed_dates))
+        .filter(
+            TaskInstance.dag_id.in_(sub_dag_run_ids),
+            TaskInstance.execution_date.in_(confirmed_dates),
+        )
         .filter(or_(TaskInstance.state.is_(None), TaskInstance.state != state))
     )
-    return qry_sub_dag
 
 
 def get_all_dag_task_query(dag, session, state, task_ids, confirmed_dates):
     """Get all tasks of the main dag that will be affected by a state change"""
-    qry_dag = (
+    return (
         session.query(TaskInstance)
         .join(TaskInstance.dag_run)
         .filter(
@@ -157,7 +159,6 @@ def get_all_dag_task_query(dag, session, state, task_ids, confirmed_dates):
         .filter(or_(TaskInstance.state.is_(None), TaskInstance.state != state))
         .options(contains_eager(TaskInstance.dag_run))
     )
-    return qry_dag
 
 
 def get_subdag_runs(dag, session, state, task_ids, commit, confirmed_dates):
@@ -250,19 +251,21 @@ def get_execution_dates(dag, execution_date, future, past):
         start_date = dag.start_date
     else:
         start_date = execution_date
-    start_date = execution_date if not past else start_date
+    start_date = start_date if past else execution_date
     if not dag.timetable.can_run:
         # If the DAG never schedules, need to look at existing DagRun if the user wants future or
         # past runs.
         dag_runs = dag.get_dagruns_between(start_date=start_date, end_date=end_date)
-        dates = sorted({d.execution_date for d in dag_runs})
+        return sorted({d.execution_date for d in dag_runs})
     elif not dag.timetable.periodic:
-        dates = [start_date]
+        return [start_date]
     else:
-        dates = [
-            info.logical_date for info in dag.iter_dagrun_infos_between(start_date, end_date, align=False)
+        return [
+            info.logical_date
+            for info in dag.iter_dagrun_infos_between(
+                start_date, end_date, align=False
+            )
         ]
-    return dates
 
 
 @provide_session

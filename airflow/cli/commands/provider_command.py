@@ -32,20 +32,19 @@ def _remove_rst_syntax(value: str) -> str:
 def provider_get(args):
     """Get a provider info."""
     providers = ProvidersManager().providers
-    if args.provider_name in providers:
-        provider_version = providers[args.provider_name].version
-        provider_info = providers[args.provider_name].provider_info
-        if args.full:
-            provider_info["description"] = _remove_rst_syntax(provider_info["description"])
-            AirflowConsole().print_as(
-                data=[provider_info],
-                output=args.output,
-            )
-        else:
-            print(f"Provider: {args.provider_name}")
-            print(f"Version: {provider_version}")
-    else:
+    if args.provider_name not in providers:
         raise SystemExit(f"No such provider installed: {args.provider_name}")
+    provider_version = providers[args.provider_name].version
+    provider_info = providers[args.provider_name].provider_info
+    if args.full:
+        provider_info["description"] = _remove_rst_syntax(provider_info["description"])
+        AirflowConsole().print_as(
+            data=[provider_info],
+            output=args.output,
+        )
+    else:
+        print(f"Provider: {args.provider_name}")
+        print(f"Version: {provider_version}")
 
 
 @suppress_logs_and_warning

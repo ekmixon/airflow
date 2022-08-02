@@ -274,10 +274,11 @@ def reorder_columns(columns):
     :param columns: columns retrieved from DB related to constraint
     :return: ordered column
     """
-    ordered_columns = []
-    for column in ['task_id', 'dag_id', 'execution_date']:
-        if column in columns:
-            ordered_columns.append(column)
+    ordered_columns = [
+        column
+        for column in ['task_id', 'dag_id', 'execution_date']
+        if column in columns
+    ]
 
     for column in columns:
         if column not in ['task_id', 'dag_id', 'execution_date']:

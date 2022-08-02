@@ -97,8 +97,7 @@ def _create_provider_info_schema_validator():
     with resource_files("airflow").joinpath("provider_info.schema.json").open("rb") as f:
         schema = json.load(f)
     cls = jsonschema.validators.validator_for(schema)
-    validator = cls(schema)
-    return validator
+    return cls(schema)
 
 
 def _create_customized_form_field_behaviours_schema_validator():
@@ -106,8 +105,7 @@ def _create_customized_form_field_behaviours_schema_validator():
     with resource_files("airflow").joinpath("customized_form_field_behaviours.schema.json").open("rb") as f:
         schema = json.load(f)
     cls = jsonschema.validators.validator_for(schema)
-    validator = cls(schema)
-    return validator
+    return cls(schema)
 
 
 def _check_builtin_provider_prefix(provider_package: str, class_name: str) -> bool:
@@ -284,8 +282,7 @@ class ProvidersManager(LoggingMixin):
 
     def _verify_all_providers_all_compatible(self):
         for provider_id, info in self._provider_dict.items():
-            min_version = MIN_PROVIDER_VERSIONS.get(provider_id)
-            if min_version:
+            if min_version := MIN_PROVIDER_VERSIONS.get(provider_id):
                 if packaging_version.parse(min_version) > packaging_version.parse(info.version):
                     log.warning(
                         f"The package {provider_id} is not compatible with this version of Airflow. "
@@ -440,14 +437,14 @@ class ProvidersManager(LoggingMixin):
         :return:
         """
         provider_uses_connection_types = False
-        connection_types = provider.provider_info.get("connection-types")
-        if connection_types:
+        if connection_types := provider.provider_info.get("connection-types"):
             for connection_type_dict in connection_types:
                 connection_type = connection_type_dict['connection-type']
                 hook_class_name = connection_type_dict['hook-class-name']
                 hook_class_names_registered.add(hook_class_name)
-                already_registered = self._hook_provider_dict.get(connection_type)
-                if already_registered:
+                if already_registered := self._hook_provider_dict.get(
+                    connection_type
+                ):
                     if already_registered.package_name != package_name:
                         already_registered_warning_connection_types.add(connection_type)
                 else:
@@ -482,8 +479,7 @@ class ProvidersManager(LoggingMixin):
            form of passing connection types
         :return:
         """
-        hook_class_names = provider.provider_info.get("hook-class-names")
-        if hook_class_names:
+        if hook_class_names := provider.provider_info.get("hook-class-names"):
             for hook_class_name in hook_class_names:
                 if hook_class_name in hook_class_names_registered:
                     # Silently ignore the hook class - it's already marked for lazy-import by
@@ -495,21 +491,21 @@ class ProvidersManager(LoggingMixin):
                 if not hook_info:
                     # Problem why importing class - we ignore it. Log is written at import time
                     continue
-                already_registered = self._hook_provider_dict.get(hook_info.connection_type)
-                if already_registered:
+                if already_registered := self._hook_provider_dict.get(
+                    hook_info.connection_type
+                ):
                     if already_registered.package_name != package_name:
                         already_registered_warning_connection_types.add(hook_info.connection_type)
-                    else:
-                        if already_registered.hook_class_name != hook_class_name:
-                            log.warning(
-                                "The hook connection type '%s' is registered twice in the"
-                                " package '%s' with different class names: '%s' and '%s'. "
-                                " Please fix it!",
-                                hook_info.connection_type,
-                                package_name,
-                                already_registered.hook_class_name,
-                                hook_class_name,
-                            )
+                    elif already_registered.hook_class_name != hook_class_name:
+                        log.warning(
+                            "The hook connection type '%s' is registered twice in the"
+                            " package '%s' with different class names: '%s' and '%s'. "
+                            " Please fix it!",
+                            hook_info.connection_type,
+                            package_name,
+                            already_registered.hook_class_name,
+                            hook_class_name,
+                        )
                 else:
                     self._hook_provider_dict[hook_info.connection_type] = HookClassProvider(
                         hook_class_name=hook_class_name, package_name=package_name
@@ -620,11 +616,10 @@ class ProvidersManager(LoggingMixin):
             class_provider = self._hook_provider_dict[connection_type]
             package_name = class_provider.package_name
             hook_class_name = class_provider.hook_class_name
-        else:
-            if not package_name:
-                raise ValueError(
-                    f"Provider package name is not set when hook_class_name ({hook_class_name}) " f"is used"
-                )
+        elif not package_name:
+            raise ValueError(
+                f"Provider package name is not set when hook_class_name ({hook_class_name}) " f"is used"
+            )
         allowed_field_classes = [IntegerField, PasswordField, StringField, BooleanField]
         if not _sanity_check(package_name, hook_class_name):
             return None
@@ -635,8 +630,7 @@ class ProvidersManager(LoggingMixin):
             # inherited from parent hook. This way we add form fields only once for the whole
             # hierarchy and we add it only from the parent hook that provides those!
             if 'get_connection_form_widgets' in hook_class.__dict__:
-                widgets = hook_class.get_connection_form_widgets()
-                if widgets:
+                if widgets := hook_class.get_connection_form_widgets():
                     for widget in widgets.values():
                         if widget.field_class not in allowed_field_classes:
                             log.warning(
@@ -649,8 +643,7 @@ class ProvidersManager(LoggingMixin):
                             return None
                     self._add_widgets(package_name, hook_class, widgets)
             if 'get_ui_field_behaviour' in hook_class.__dict__:
-                field_behaviours = hook_class.get_ui_field_behaviour()
-                if field_behaviours:
+                if field_behaviours := hook_class.get_ui_field_behaviour():
                     self._add_customized_fields(package_name, hook_class, field_behaviours)
         except Exception as e:
             log.warning(
@@ -661,17 +654,16 @@ class ProvidersManager(LoggingMixin):
             )
             return None
         hook_connection_type = self._get_attr(hook_class, 'conn_type')
-        if connection_type:
-            if hook_connection_type != connection_type:
-                log.warning(
-                    "Inconsistency! The hook class '%s' declares connection type '%s'"
-                    " but it is added by provider '%s' as connection_type '%s' in provider info. "
-                    "This should be fixed!",
-                    hook_class,
-                    hook_connection_type,
-                    package_name,
-                    connection_type,
-                )
+        if connection_type and hook_connection_type != connection_type:
+            log.warning(
+                "Inconsistency! The hook class '%s' declares connection type '%s'"
+                " but it is added by provider '%s' as connection_type '%s' in provider info. "
+                "This should be fixed!",
+                hook_class,
+                hook_connection_type,
+                package_name,
+                connection_type,
+            )
         connection_type = hook_connection_type
         connection_id_attribute_name: str = self._get_attr(hook_class, 'conn_name_attr')
         hook_name: str = self._get_attr(hook_class, 'hook_name')
@@ -767,7 +759,9 @@ class ProvidersManager(LoggingMixin):
         for provider_package, (_, provider) in self._provider_dict.items():
             if provider.get("auth-backends"):
                 for auth_backend_module_name in provider["auth-backends"]:
-                    if _sanity_check(provider_package, auth_backend_module_name + ".init_app"):
+                    if _sanity_check(
+                        provider_package, f"{auth_backend_module_name}.init_app"
+                    ):
                         self._api_auth_backend_module_names.add(auth_backend_module_name)
 
     @property

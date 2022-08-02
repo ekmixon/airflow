@@ -34,7 +34,7 @@ class AioHttpApp(AbstractApp):
             filepath = loader.get_filename(self.import_name)
 
         if filepath is None:
-            raise RuntimeError("Invalid import name '{}'".format(self.import_name))
+            raise RuntimeError(f"Invalid import name '{self.import_name}'")
 
         return os.path.dirname(os.path.abspath(filepath))
 
@@ -49,10 +49,9 @@ class AioHttpApp(AbstractApp):
                     "create a new app with 'only_one_api=False' "
                     "to add more than one api"
                 )
-            else:
-                self.app = self._get_api(specification, kwargs).subapp
-                self._api_added = True
-                return self.app
+            self.app = self._get_api(specification, kwargs).subapp
+            self._api_added = True
+            return self.app
 
         api = self._get_api(specification, kwargs)
         try:
@@ -82,14 +81,13 @@ class AioHttpApp(AbstractApp):
 
         logger.debug('Starting %s HTTP server..', self.server, extra=vars(self))
 
-        if self.server == 'aiohttp':
-            logger.info('Listening on %s:%s..', self.host, self.port)
+        if self.server != 'aiohttp':
+            raise Exception(f'Server {self.server} not recognized')
+        logger.info('Listening on %s:%s..', self.host, self.port)
 
-            access_log = options.pop('access_log', None)
+        access_log = options.pop('access_log', None)
 
-            if options.pop('use_default_access_log', None):
-                access_log = logger
+        if options.pop('use_default_access_log', None):
+            access_log = logger
 
-            web.run_app(self.app, port=self.port, host=self.host, access_log=access_log, **options)
-        else:
-            raise Exception('Server {} not recognized'.format(self.server))
+        web.run_app(self.app, port=self.port, host=self.host, access_log=access_log, **options)
