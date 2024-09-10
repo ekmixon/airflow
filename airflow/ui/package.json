@@ -24,7 +24,7 @@
     "react-hot-loader": "^4",
     "react-icons": "^4.2.0",
     "react-query": "^3.12.3",
-    "react-router-dom": "^5.2.0",
+    "react-router-dom": "^6.0.0",
     "react-select": "^4.3.0",
     "react-table": "^7.7.0",
     "use-react-router": "^1.0.7"
