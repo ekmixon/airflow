@@ -9,7 +9,7 @@
     "lint": "eslint --format codeframe --ext mjs,jsx,js,tsx,ts src test && tsc"
   },
   "dependencies": {
-    "@chakra-ui/react": "^1.6.1",
+    "@chakra-ui/react": "^2.9.0",
     "@emotion/react": "^11.1.5",
     "@emotion/styled": "^11.1.5",
     "@neutrinojs/copy": "^9.5.0",
@@ -24,7 +24,7 @@
     "react-hot-loader": "^4",
     "react-icons": "^4.2.0",
     "react-query": "^3.12.3",
-    "react-router-dom": "^5.2.0",
+    "react-router-dom": "^6.0.0",
     "react-select": "^4.3.0",
     "react-table": "^7.7.0",
     "use-react-router": "^1.0.7"
@@ -33,8 +33,8 @@
     "@neutrinojs/eslint": "^9.5.0",
     "@neutrinojs/jest": "^9.5.0",
     "@neutrinojs/react": "^9.5.0",
-    "@testing-library/jest-dom": "^5.11.9",
-    "@testing-library/react": "^11.2.5",
+    "@testing-library/jest-dom": "^5.16.0",
+    "@testing-library/react": "^14.0.0",
     "@types/humps": "^2.0.0",
     "@types/jest": "^26.0.20",
     "@types/react": "^17.0.3",
@@ -45,7 +45,7 @@
     "eslint": "^7",
     "eslint-config-airbnb-typescript": "^12.3.1",
     "eslint-plugin-import": "^2.22.1",
-    "eslint-plugin-jsx-a11y": "^6.4.1",
+    "eslint-plugin-jsx-a11y": "^6.9.0",
     "eslint-plugin-react-hooks": "^4.2.0",
     "history": "^5.0.0",
     "jest": "^26",
